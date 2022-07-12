@@ -1,0 +1,46 @@
+
+
+- - - - - - - ANTS - - - - - - -
+  - ant behavior
+    - retrieve food
+    - fight/grapple
+    - spread food pheromone when they move while holding food
+  - entities:
+    - base -> colony
+      - colony system that handles food -> ants
+  - scenario:
+    - food spawn system
+    - touch and drag to add pheromone
+
+
+- - - - - POLISH - - - - -
+  - Remove main menu
+    - hotkey for opening level editor
+  - Add music from Antocracy
+  - Dead ants
+  - favicon
+
+
+- - - - - - RUNE INTEGRATION - - - - -
+  - Rune script include
+  - Rune api calls
+  - game over when ants are all killed or something?
+
+
+- - - - - - - FIX - - - - - - - -
+  - pheromoneWorker appears to not update after reset in level editor
+
+
+- - - - GAME MECHANICS - - - - -
+  - Spider, beetle, scorpion instead of plain food, at least after a bit
+  - Score based on food, enemies killed?
+  - Enemies spawn faster but you're stronger?
+  - Briefly control a scorpion or something?
+  - Balance towards losing eventually?
+
+
+- - - - - - REFACTOR - - - - - -
+  - Use UI components package
+  - Use utils components package
+
+

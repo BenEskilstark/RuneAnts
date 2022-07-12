@@ -1,0 +1,63 @@
+#!/bin/bash
+# Copy the entire directoy this file is in as the base for your game.
+# Then run to get all these node files
+# Comment out things you don't need
+
+# npm init
+
+# flow
+sudo npm install --save-dev flow-bin
+
+# browserify
+sudo npm install -g browserify
+
+# babel
+sudo npm install babel-preset-flow
+sudo npm install babel-preset-es2015
+sudo npm install babel-cli babel-core --save-dev
+sudo npm install --save-dev babel-plugin-transform-react-jsx
+sudo npm install --save-dev babel-plugin-transform-object-rest-spread
+# sudo npm install --save-dev @babel/plugin-proposal-optional-chaining
+
+# react
+sudo npm install --save react react-dom
+# sudo npm install react-tween-state
+
+# redux
+sudo npm install --save redux
+
+# make canvas art look like sketches
+# npm install --save roughjs
+
+# d3
+# sudo npm install d3
+# npm install topojson-client
+
+# eureca
+# sudo npm install eureca.io
+# sudo npm install wrtc
+# sudo npm install engine.io
+
+#eureca
+sudo npm install express --save
+
+# react native server
+# npm install -g expo-cli
+
+# postgres
+sudo npm install pg
+
+# clientside REST
+sudo npm install axios
+
+# better random numbers
+sudo npm install seedrandom
+
+# electron
+# npm i -D electron@latest
+
+# electron forge
+# npm i -g @electron-forge/cli
+
+# electron squirrel
+# npm i @electron-forge/maker-squirrel
