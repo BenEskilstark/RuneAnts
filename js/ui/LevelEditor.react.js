@@ -46,11 +46,11 @@ function LevelEditor(props: Props): React.Node {
     gridWidth: game.gridHeight,
     gridHeight: game.gridWidth,
     playerID: 0,
-    paletteMode: 'MARQUEE',
+    paletteMode: 'CREATE ENTITIES',
 
     // entity creation mode
     deleteMode: false,
-    entityType: 'ANT',
+    entityType: 'FOOD',
     subdividing: false,
     pheromoneType: 'HEAT',
     background: 'SKYLINE',

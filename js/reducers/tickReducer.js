@@ -110,6 +110,7 @@ const doTick = (game: Game): Game => {
   keepControlledMoving(game);
   updateActors(game);
   updateAgents(game);
+  updateBases(game);
   updateTiledSprites(game);
   updateViewPos(game, false /*don't clamp to world*/);
   updateTicker(game);
@@ -124,6 +125,7 @@ const doTick = (game: Game): Game => {
 
   return game;
 };
+
 
 //////////////////////////////////////////////////////////////////////////
 // Updating Agents
@@ -416,6 +418,29 @@ const stepAction = (
 //////////////////////////////////////////////////////////////////////////
 // Misc.
 //////////////////////////////////////////////////////////////////////////
+
+// check for ants on top of the base with food,
+// if there is, then delete the food and spawn an ant
+const updateBases = (game): void => {
+  for (const id of game.BASE) {
+    const base = game.entities[id];
+    const yourAnts = game.ANT
+      .map(id => game.entities[id])
+      .filter(ant => ant.playerID == base.playerID);
+    for (const ant of yourAnts) {
+      if (
+        ant.holding != null && ant.holding.type == 'FOOD' &&
+        equals(ant.position, base.position)
+      ) {
+        removeEntity(game, ant.holding);
+        ant.holding = null;
+
+        addEntity(game, Entities.ANT.make(game, base.position, base.playerID));
+      }
+    }
+  }
+}
+
 
 const updateTiledSprites = (game): void => {
   for (const id of game.staleTiles) {

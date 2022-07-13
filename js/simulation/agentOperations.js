@@ -58,6 +58,31 @@ const agentPickup = (
   //   game.bases[agent.playerID].taskNeed['GO_TO_DIRT'] -= 1;
   // }
 
+  // if it's food:
+  //   - set ant's foodPherQuantity property to 2x distance to food
+  //   - put food pheromone around pickup location
+  if (entity.type == 'FOOD') {
+    const ant = agent;
+    let distToColony =
+      globalConfig.pheromones.COLONY.quantity
+      - getPheromoneAtPosition(game, ant.position, 'COLONY', ant.playerID);
+    if (distToColony == globalConfig.pheromones.COLONY.quantity) {
+      distToColony = 50;
+    }
+    // NOTE: set to 0 unless this food actually neighbors other food, see below
+    ant.foodPherQuantity = 0;
+
+    getNeighborEntities(game, entity)
+      .filter(e => e.type == 'FOOD')
+      .forEach(f => ant.foodPherQuantity = distToColony * 2.1);
+
+    fillPheromone(game, ant.position, 'FOOD', ant.playerID, ant.foodPherQuantity);
+    fillPheromone(game, entity.position, 'FOOD', ant.playerID, ant.foodPherQuantity);
+    getFreeNeighborPositions(game, entity, globalConfig.pheromones.FOOD.blockingTypes)
+      .forEach(pos => fillPheromone(game, pos, 'FOOD', ant.playerID, ant.foodPherQuantity));
+
+  }
+
   // do the actual pickup
   agent.holding = pickupEntity(game, entity, pickupPos);
   agent.holdingIDs.push(agent.holding.id);
@@ -134,7 +159,7 @@ const agentDecideMove = (game: Game, agent: Agent): Game => {
   let blockers = config.blockingTypes;
   if (!blockers) {
     console.error("no blockers", agent);
-    blockers = [...Entities.AGENT.config.blockingTypes];
+    blockers = [...Entities[agent.type].config.blockingTypes];
   }
 
   let freeNeighbors = getFreeNeighborPositions(game, agent, blockers)
@@ -166,8 +191,30 @@ const agentDecideMove = (game: Game, agent: Agent): Game => {
     // weight this square across each pheromone value
     const pher = pheromoneNeighbors[i];
     for (const pherType in pher) {
+      if (pherType == 'FOOD') continue; // food is special, see below
       neighborScores[i] +=
         (pher[pherType] - basePher[pherType]) * taskConfig[pherType]
+    }
+
+    // don't use regular food difference for retrieval or return
+    if (agent.task == 'RETRIEVE') {
+      // if diff between food pheromones is due to dispersal, then just follow it normally
+      if (Math.abs(basePher.FOOD - pher.FOOD) >= 4) {
+        neighborScores[i] +=
+          (pher.FOOD - basePher.FOOD) * taskConfig.FOOD;
+      } else {
+        // otherwise, wagent to go to smaller neighbor since food pher decreases in
+        // strength as you go away from the colony
+        neighborScores[i] +=
+          -1 * (pher.FOOD - basePher.FOOD) * taskConfig.FOOD;
+      }
+    } else if (agent.task == 'RETURN' && agent.holding != null && agent.holding.type == 'FOOD') {
+      // if returning with food, prefer to follow pre-existing food trail if it exists
+      neighborScores[i] +=
+        (pher.FOOD * taskConfig.FOOD) * (pher.COLONY - basePher.COLONY);
+    } else {
+      neighborScores[i] +=
+        (pher.FOOD - basePher.FOOD) * taskConfig.FOOD;
     }
 
     // penalize moving to previous position
@@ -236,9 +283,17 @@ const agentDecideTask = (game, agent, nextPos): void => {
 
   const pherAtCell = getPheromonesInCell(game.grid, nextPos, agent.playerID);
 
-  // TODO: switch to RETRIEVE if on FOOD pheromone
+  // switch to DEFEND if on ALERT pheromone
+  if (pherAtCell['ALERT'] > 0) {
+    agent.task = 'DEFEND';
+    return agent.task;
+  }
 
-  // TODO: switch to DEFEND if on ALERT pheromone
+  // switch to RETRIEVE if on FOOD pheromone
+  if (pherAtCell['FOOD'] > 0) {
+    agent.task = 'RETRIEVE';
+    return agent.task;
+  }
 
   return agent.task;
 }
@@ -267,17 +322,28 @@ const agentDecideAction = (game: Game, agent: Agent): void => {
 };
 
 const antDecideAction = (game, ant) => {
-  // DROP OFF FOOD
-
   // FIGHT
 
   // PICK UP FOOD
+  const neighboringFood = getNeighborPositions(game, ant, true /* external */)
+    .map(pos => {
+      return lookupInGrid(game.grid, pos)
+        .filter(id => game.entities[id].type == 'FOOD')[0];
+    })
+    .filter(id => id != null)
+    .map(id => game.entities[id])
+  if (!ant.holding && neighboringFood.length > 0) {
+    const pickup = oneOf(neighboringFood);
+    const position = pickup.position;
+    queueAction(game, ant, makeAction(game, ant, 'PICKUP', {pickup, position}));
+  }
 
   // MOVE
-  agentDecideMove(game, agent);
+  agentDecideMove(game, ant);
 };
 
-const antDecideAction = (game: Game, ant: Ant): void => {
+
+const exampleAntDecideAction = (game: Game, ant: Ant): void => {
   const config = getEntityConfig(game, ant);
 
   // trapjawing ants don't do anything
@@ -672,7 +738,7 @@ const entityFight = (game: Game, entity: Entity, target: ?Entity): void => {
 
   // Trapjaw ants
   if (
-    game.config[entity.playerID]?.trapjaw &&
+    game.config[entity.playerID].trapjaw &&
     entity.caste == 'MINIMA' &&
     target.caste != 'MINIMA' &&
     target.caste != 'SUB_MINIMA' &&

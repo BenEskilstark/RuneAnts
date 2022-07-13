@@ -22,19 +22,51 @@ var config = {
 
 };
 
-var nonMoltenPheromoneBlockingTypes = ['DIRT', 'STONE', 'DOODAD', 'TURRET'];
-var pheromoneBlockingTypes = [].concat(nonMoltenPheromoneBlockingTypes, ['ICE', 'SULPHUR', 'STEEL', 'IRON', 'SILICON', 'GLASS']);
+var nonMoltenPheromoneBlockingTypes = ['DIRT', 'STONE', 'DOODAD'];
+var pheromoneBlockingTypes = [].concat(nonMoltenPheromoneBlockingTypes, ['ICE', 'STEEL', 'IRON']);
 
 var pheromones = {
   COLONY: {
     quantity: 350,
     decayAmount: 1,
     color: 'rgb(155, 227, 90)',
-    tileIndex: 0,
+    tileIndex: 1,
 
-    blockingTypes: [].concat(_toConsumableArray(pheromoneBlockingTypes), ['COAL']),
+    blockingTypes: [].concat(_toConsumableArray(pheromoneBlockingTypes)),
     blockingPheromones: []
   },
+  FOOD: {
+    quantity: 100,
+    decayAmount: 40,
+    isDispersing: true,
+    decayRate: 0.03, // how much it decays per tick
+    color: 'rgb(0, 255, 0)',
+    tileIndex: 0,
+
+    blockingTypes: [].concat(_toConsumableArray(pheromoneBlockingTypes)),
+    blockingPheromones: []
+  },
+  ALERT: {
+    quantity: 60,
+    decayAmount: 10,
+    isDispersing: true,
+    decayRate: 0.5, // how much it decays per tick
+    color: 'rgb(255, 0, 0)',
+    tileIndex: 2,
+    blockingTypes: [].concat(_toConsumableArray(pheromoneBlockingTypes)),
+    blockingPheromones: []
+  },
+  FOLLOW: {
+    quantity: 100,
+    decayAmount: 10,
+    isDispersing: true,
+    decayRate: 0.1, // how much it decays per tick
+    color: 'rgb(210, 105, 30)',
+    tileIndex: 1,
+    blockingTypes: [].concat(_toConsumableArray(pheromoneBlockingTypes)),
+    blockingPheromones: []
+  },
+
   LIGHT: {
     quantity: 350,
     decayAmount: 1,
@@ -433,8 +465,8 @@ var config = {
 
   AGENT: true,
 
-  pickupTypes: ['FOOD', 'DIRT', 'TOKEN', 'DYNAMITE', 'COAL', 'IRON', 'STEEL'],
-  blockingTypes: ['FOOD', 'DIRT', 'AGENT', 'STONE', 'DOODAD', 'WORM', 'TOKEN', 'DYNAMITE', 'COAL', 'IRON', 'STEEL'],
+  pickupTypes: ['FOOD', 'DIRT', 'TOKEN', 'DYNAMITE', 'STEEL'],
+  blockingTypes: ['FOOD', 'DIRT', 'AGENT', 'STONE', 'DOODAD', 'WORM', 'TOKEN', 'ANT', 'STEEL'],
 
   // action params
   MOVE: {
@@ -484,6 +516,8 @@ var config = {
     forwardMovementBonus: 0,
     prevPositionPenalty: -100,
     ALERT: 500,
+    FOOD: 100,
+    FOLLOW: 10,
     COLONY: -1
   },
   RETRIEVE: {
@@ -491,13 +525,15 @@ var config = {
     forwardMovementBonus: 100,
     prevPositionPenalty: -100,
     ALERT: 300,
+    FOOD: 300,
     COLONY: -100
   },
   RETURN: {
-    base: 10,
+    base: 3,
     forwardMovementBonus: 500,
-    prevPositionPenalty: -100,
+    prevPositionPenalty: -1000,
     ALERT: 0,
+    FOOD: 20,
     COLONY: 1000
   },
   MOVE_DIRT: {
@@ -527,6 +563,8 @@ var make = function make(game, position, playerID) {
 
     task: 'WANDER',
     timeOnTask: 0,
+
+    foodPherQuantity: 0, // tracks how much food pheromone to place
 
     // this frame offset allows iterating through spritesheets across
     // multiple actions (rn only used by queen ant doing one full walk
@@ -853,6 +891,8 @@ var Entities = {
   STONE: require('./stone.js'),
   STEEL: require('./steel.js'),
 
+  BASE: require('./base.js'),
+
   FOOD: require('./food.js'),
   AGENT: require('./agent.js'),
   TOKEN: require('./token.js'),
@@ -860,9 +900,8 @@ var Entities = {
   ANT: require('./ant.js'),
   WORM: require('./worm.js'),
 
-  DYNAMITE: require('./dynamite.js'),
+  DYNAMITE: require('./dynamite.js')
 
-  BASE: require('./base.js')
 };
 
 module.exports = {
@@ -2522,6 +2561,7 @@ var doTick = function doTick(game) {
   keepControlledMoving(game);
   updateActors(game);
   updateAgents(game);
+  updateBases(game);
   updateTiledSprites(game);
   updateViewPos(game, false /*don't clamp to world*/);
   updateTicker(game);
@@ -2816,17 +2856,56 @@ var stepAction = function stepAction(game, entity, decisionFunction) {
 // Misc.
 //////////////////////////////////////////////////////////////////////////
 
-var updateTiledSprites = function updateTiledSprites(game) {
+// check for ants on top of the base with food,
+// if there is, then delete the food and spawn an ant
+var updateBases = function updateBases(game) {
   var _iteratorNormalCompletion2 = true;
   var _didIteratorError2 = false;
   var _iteratorError2 = undefined;
 
   try {
-    for (var _iterator2 = game.staleTiles[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+    var _loop = function _loop() {
       var id = _step2.value;
 
-      var entity = game.entities[id];
-      entity.dictIndexStr = getDictIndexStr(game, entity);
+      var base = game.entities[id];
+      var yourAnts = game.ANT.map(function (id) {
+        return game.entities[id];
+      }).filter(function (ant) {
+        return ant.playerID == base.playerID;
+      });
+      var _iteratorNormalCompletion3 = true;
+      var _didIteratorError3 = false;
+      var _iteratorError3 = undefined;
+
+      try {
+        for (var _iterator3 = yourAnts[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+          var ant = _step3.value;
+
+          if (ant.holding != null && ant.holding.type == 'FOOD' && equals(ant.position, base.position)) {
+            removeEntity(game, ant.holding);
+            ant.holding = null;
+
+            addEntity(game, Entities.ANT.make(game, base.position, base.playerID));
+          }
+        }
+      } catch (err) {
+        _didIteratorError3 = true;
+        _iteratorError3 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion3 && _iterator3.return) {
+            _iterator3.return();
+          }
+        } finally {
+          if (_didIteratorError3) {
+            throw _iteratorError3;
+          }
+        }
+      }
+    };
+
+    for (var _iterator2 = game.BASE[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+      _loop();
     }
   } catch (err) {
     _didIteratorError2 = true;
@@ -2839,6 +2918,34 @@ var updateTiledSprites = function updateTiledSprites(game) {
     } finally {
       if (_didIteratorError2) {
         throw _iteratorError2;
+      }
+    }
+  }
+};
+
+var updateTiledSprites = function updateTiledSprites(game) {
+  var _iteratorNormalCompletion4 = true;
+  var _didIteratorError4 = false;
+  var _iteratorError4 = undefined;
+
+  try {
+    for (var _iterator4 = game.staleTiles[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+      var id = _step4.value;
+
+      var entity = game.entities[id];
+      entity.dictIndexStr = getDictIndexStr(game, entity);
+    }
+  } catch (err) {
+    _didIteratorError4 = true;
+    _iteratorError4 = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion4 && _iterator4.return) {
+        _iterator4.return();
+      }
+    } finally {
+      if (_didIteratorError4) {
+        throw _iteratorError4;
       }
     }
   }
@@ -4605,6 +4712,23 @@ var getEntityPheromoneSources = function getEntityPheromoneSources(game, entity)
       quantity: entity.quantity
     }];
   }
+
+  if (entity.holding != null && entity.holding.type == 'FOOD' && entity.task == 'RETURN') {
+    pheromoneType = 'FOOD';
+    playerID = entity.playerID;
+    quantity = entity.foodPherQuantity || 0;
+    if (quantity == 0) {
+      return [];
+    } else {
+      return [{
+        id: entity.id,
+        playerID: playerID,
+        pheromoneType: pheromoneType,
+        position: entity.position,
+        quantity: quantity
+      }];
+    }
+  }
   return [];
 };
 
@@ -5787,6 +5911,31 @@ var agentPickup = function agentPickup(game, agent, entity, pickupPos) {
   //   game.bases[agent.playerID].taskNeed['GO_TO_DIRT'] -= 1;
   // }
 
+  // if it's food:
+  //   - set ant's foodPherQuantity property to 2x distance to food
+  //   - put food pheromone around pickup location
+  if (entity.type == 'FOOD') {
+    var ant = agent;
+    var distToColony = globalConfig.pheromones.COLONY.quantity - getPheromoneAtPosition(game, ant.position, 'COLONY', ant.playerID);
+    if (distToColony == globalConfig.pheromones.COLONY.quantity) {
+      distToColony = 50;
+    }
+    // NOTE: set to 0 unless this food actually neighbors other food, see below
+    ant.foodPherQuantity = 0;
+
+    getNeighborEntities(game, entity).filter(function (e) {
+      return e.type == 'FOOD';
+    }).forEach(function (f) {
+      return ant.foodPherQuantity = distToColony * 2.1;
+    });
+
+    fillPheromone(game, ant.position, 'FOOD', ant.playerID, ant.foodPherQuantity);
+    fillPheromone(game, entity.position, 'FOOD', ant.playerID, ant.foodPherQuantity);
+    getFreeNeighborPositions(game, entity, globalConfig.pheromones.FOOD.blockingTypes).forEach(function (pos) {
+      return fillPheromone(game, pos, 'FOOD', ant.playerID, ant.foodPherQuantity);
+    });
+  }
+
   // do the actual pickup
   agent.holding = pickupEntity(game, entity, pickupPos);
   agent.holdingIDs.push(agent.holding.id);
@@ -5886,7 +6035,7 @@ var agentDecideMove = function agentDecideMove(game, agent) {
   var blockers = config.blockingTypes;
   if (!blockers) {
     console.error("no blockers", agent);
-    blockers = [].concat(_toConsumableArray(Entities.AGENT.config.blockingTypes));
+    blockers = [].concat(_toConsumableArray(Entities[agent.type].config.blockingTypes));
   }
 
   var freeNeighbors = getFreeNeighborPositions(game, agent, blockers).filter(function (pos) {
@@ -5924,7 +6073,25 @@ var agentDecideMove = function agentDecideMove(game, agent) {
     // weight this square across each pheromone value
     var pher = pheromoneNeighbors[i];
     for (var _pherType in pher) {
+      if (_pherType == 'FOOD') continue; // food is special, see below
       neighborScores[i] += (pher[_pherType] - basePher[_pherType]) * taskConfig[_pherType];
+    }
+
+    // don't use regular food difference for retrieval or return
+    if (agent.task == 'RETRIEVE') {
+      // if diff between food pheromones is due to dispersal, then just follow it normally
+      if (Math.abs(basePher.FOOD - pher.FOOD) >= 4) {
+        neighborScores[i] += (pher.FOOD - basePher.FOOD) * taskConfig.FOOD;
+      } else {
+        // otherwise, wagent to go to smaller neighbor since food pher decreases in
+        // strength as you go away from the colony
+        neighborScores[i] += -1 * (pher.FOOD - basePher.FOOD) * taskConfig.FOOD;
+      }
+    } else if (agent.task == 'RETURN' && agent.holding != null && agent.holding.type == 'FOOD') {
+      // if returning with food, prefer to follow pre-existing food trail if it exists
+      neighborScores[i] += pher.FOOD * taskConfig.FOOD * (pher.COLONY - basePher.COLONY);
+    } else {
+      neighborScores[i] += (pher.FOOD - basePher.FOOD) * taskConfig.FOOD;
     }
 
     // penalize moving to previous position
@@ -5979,10 +6146,32 @@ var agentDecideMove = function agentDecideMove(game, agent) {
 var agentDecideTask = function agentDecideTask(game, agent, nextPos) {
   if (agent.COLLECTABLE) return; // collectables already have their task set
 
+  // switch to retrieve if holding food
   var holdingFood = agent.holding != null && agent.holding.type == 'FOOD';
-  var holdingDirt = agent.holding != null && agent.holding.type == 'DIRT';
+  if (holdingFood && agent.task != 'RETURN') {
+    agent.task = 'RETURN';
+    return agent.task;
+  }
+
+  // switch to wander if retrieving without food
+  if (!holdingFood && agent.task == 'RETURN') {
+    agent.task = 'WANDER';
+    return agent.task;
+  }
 
   var pherAtCell = getPheromonesInCell(game.grid, nextPos, agent.playerID);
+
+  // switch to DEFEND if on ALERT pheromone
+  if (pherAtCell['ALERT'] > 0) {
+    agent.task = 'DEFEND';
+    return agent.task;
+  }
+
+  // switch to RETRIEVE if on FOOD pheromone
+  if (pherAtCell['FOOD'] > 0) {
+    agent.task = 'RETRIEVE';
+    return agent.task;
+  }
 
   return agent.task;
 };
@@ -5998,12 +6187,485 @@ var agentDecideAction = function agentDecideAction(game, agent) {
 
   switch (agent.type) {
     case 'ANT':
+      antDecideAction(game, agent);
+      break;
     case 'AGENT':
     case 'WORM':
       {
         // MOVE
         agentDecideMove(game, agent);
+        break;
       }
+  }
+};
+
+var antDecideAction = function antDecideAction(game, ant) {
+  // FIGHT
+
+  // PICK UP FOOD
+  var neighboringFood = getNeighborPositions(game, ant, true /* external */).map(function (pos) {
+    return lookupInGrid(game.grid, pos).filter(function (id) {
+      return game.entities[id].type == 'FOOD';
+    })[0];
+  }).filter(function (id) {
+    return id != null;
+  }).map(function (id) {
+    return game.entities[id];
+  });
+  if (!ant.holding && neighboringFood.length > 0) {
+    var pickup = oneOf(neighboringFood);
+    var position = pickup.position;
+    queueAction(game, ant, makeAction(game, ant, 'PICKUP', { pickup: pickup, position: position }));
+  }
+
+  // MOVE
+  agentDecideMove(game, ant);
+};
+
+var exampleAntDecideAction = function exampleAntDecideAction(game, ant) {
+  var config = getEntityConfig(game, ant);
+
+  // trapjawing ants don't do anything
+  if (ant.position == null) return;
+
+  // allow queen to feed
+  if (ant.holding != null) {
+    // FEED
+    var neighboringLarva = getNeighborPositions(game, ant, true /* external */).map(function (pos) {
+      return lookupInGrid(game.grid, pos).filter(function (id) {
+        return game.entities[id].type == 'LARVA';
+      })[0];
+    }).filter(function (id) {
+      return id != null;
+    }).map(function (id) {
+      return game.entities[id];
+    }).filter(function (l) {
+      return l.foodNeed > 0;
+    });
+    if (ant.holding.type == 'FOOD' && neighboringLarva.length > 0) {
+      queueAction(game, ant, makeAction(game, ant, 'FEED'));
+      return;
+    }
+  }
+
+  // don't do anything else if this ant is the player's queen
+  if (ant.caste == 'QUEEN' && game.players[ant.playerID].type == 'HUMAN' && !ant.autopilot) {
+    var token = game.TOKEN.map(function (id) {
+      return game.entities[id];
+    }).filter(function (t) {
+      return t.pheromoneType == 'QUEEN_FOLLOW' && t.playerID == game.playerID;
+    })[0];
+    // queen moves "automatically" if the token exists, ie uses this function
+    if (token != null) {
+      antDecideMove(game, ant);
+    }
+    return;
+  }
+
+  // if this is a honeypot ant, the affix to dirt or stone
+  // AND if affixed, then lay food every once in a while
+  if (ant.caste == 'HONEY_POT') {
+    if (!ant.affixed) {
+      // see if you should affix
+      if (canLayFood(game, ant)) {
+        var positions = getPositionsInFront(game, ant);
+        var _iteratorNormalCompletion2 = true;
+        var _didIteratorError2 = false;
+        var _iteratorError2 = undefined;
+
+        try {
+          for (var _iterator2 = positions[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+            var pos = _step2.value;
+
+            var occupied = lookupInGrid(game.grid, pos).filter(function (id) {
+              return ant.id != id;
+            }).map(function (id) {
+              return game.entities[id];
+            }).filter(function (e) {
+              return e.type == 'DIRT' || e.type == 'STONE';
+            }).length > 0;
+            var inGrid = insideGrid(game.grid, pos);
+            if (occupied && inGrid && thetaToDir(ant.theta, true) != null) {
+              ant.affixed = true;
+              return; // affixed honeypots don't move
+            }
+          }
+        } catch (err) {
+          _didIteratorError2 = true;
+          _iteratorError2 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion2 && _iterator2.return) {
+              _iterator2.return();
+            }
+          } finally {
+            if (_didIteratorError2) {
+              throw _iteratorError2;
+            }
+          }
+        }
+      }
+    } else {
+      // laying food
+      if (ant.foodLayingCooldown < 0) {
+        ant.foodLayingCooldown = config.foodLayingCooldown;
+
+        var _positions = getPositionsBehind(game, ant);
+        var _iteratorNormalCompletion3 = true;
+        var _didIteratorError3 = false;
+        var _iteratorError3 = undefined;
+
+        try {
+          for (var _iterator3 = _positions[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+            var _pos = _step3.value;
+
+            var _occupied = lookupInGrid(game.grid, _pos).filter(function (id) {
+              return ant.id != id;
+            }).length > 0;
+            var _inGrid = insideGrid(game.grid, _pos);
+            if (!_occupied && _inGrid && thetaToDir(ant.theta, true) != null) {
+              addEntity(game, makeFood(game, _pos));
+            }
+          }
+        } catch (err) {
+          _didIteratorError3 = true;
+          _iteratorError3 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion3 && _iterator3.return) {
+              _iterator3.return();
+            }
+          } finally {
+            if (_didIteratorError3) {
+              throw _iteratorError3;
+            }
+          }
+        }
+      } else {
+        ant.foodLayingCooldown -= game.timeSinceLastTick;
+      }
+      return; // affixed honeypots don't move
+    }
+  }
+
+  // FIGHT
+  if (ant.holding == null &&
+  // getPheromoneAtPosition(game, ant.position, 'PATROL_DEFEND_PHER', ant.playerID) == 0 &&
+  // ^^ handle only based on task, not pheromone
+  config.damage > 0) {
+    var domPher = getPheromoneAtPosition(game, ant.position, 'DOMESTICATE', ant.playerID) > 0;
+    var rallyPher = getPheromoneAtPosition(game, ant.position, 'PATROL_DEFEND_PHER', ant.playerID) > 0;
+    var targets = getNeighborEntities(game, ant, true).filter(function (e) {
+      if (e.position == null) return false;
+      if (isDiagonalMove(ant.position, e.position) && e.type == 'ANT' && e.caste == 'MINIMA') return false;
+      return game.config.critterTypes.includes(e.type) && !domPher || e.type == 'ANT' && e.playerID != ant.playerID || e.type == 'TERMITE' && e.playerID != ant.playerID ||
+      // (e.type == 'FOOT' && e.state == 'stomping') ||
+      // ants alerted by the queen will attack anything with hp
+      e.playerID != ant.playerID && e.hp > 0 && e.type != 'FOOT' && getPheromoneAtPosition(game, ant.position, 'QUEEN_ALERT', ant.playerID) > 0 && ant.task == 'DEFEND';
+    });
+
+    if (targets.length > 0 && ant.task != 'PATROL_DEFEND' && !rallyPher) {
+      // always prefer to grapple if possible
+      var filteredTargets = targets.filter(function (t) {
+        if (ant.caste != 'MINIMA') return true;
+        return t.caste == 'MINIMA';
+      });
+      var shouldFight = true;
+      var target = filteredTargets.length > 0 ? oneOf(filteredTargets) : oneOf(targets);
+      var actionType = 'BITE';
+      if (target.caste == 'MINIMA' && ant.caste == 'MINIMA' || target.caste == 'TERMITE_WORKER' && ant.caste == 'MINIMA'
+      // || (target.caste == 'MEDIA' && ant.caste == 'MEDIA')
+      ) {
+          // special case for queen with break up grapple ability
+          if (getPheromoneAtPosition(game, ant.position, 'QUEEN_DISPERSE', ant.playerID) > 0 || getPheromoneAtPosition(game, ant.position, 'QUEEN_DISPERSE', target.playerID) > 0) {
+            if (ant.playerID == game.playerID && game.config[playerID].queenBreaksUpGrapple) {
+              actionType = 'BITE';
+            } else {
+              shouldFight = false;
+            }
+          } else {
+            actionType = 'GRAPPLE';
+          }
+        }
+      if (shouldFight) {
+        // special case for CPU queens w/whirlwind or dash ability
+        if (ant.caste == 'QUEEN' && game.config[ant.playerID].queenAbilities.includes('JUMP') && Math.random() < 0.2) {
+          actionType = 'DASH';
+          target = { nextPos: _extends({}, target.position) };
+        }
+        if (ant.caste == 'QUEEN' && game.config[ant.playerID].queenAbilities.includes('WHIRLWIND') && Math.random() < 0.2) {
+          actionType = 'WHIRLWIND';
+        }
+        queueAction(game, ant, makeAction(game, ant, actionType, target));
+        return;
+      }
+    }
+  }
+
+  // PICKUP
+  if (ant.holdingIDs.length < config.maxHold) {
+    // cpu queen
+    if (ant.caste == 'QUEEN') {
+      antDecideMove(game, ant);
+      return;
+    }
+
+    antPickupNeighbor(game, ant);
+
+    // EXAMINE
+    if (ant.caste == 'MINIMA' && ant.actions.length == 0 && ant.task == 'WANDER' && getPheromoneAtPosition(game, ant.position, 'QUEEN_PHER', ant.playerID) == 0) {
+      var posRight = round(add(ant.position, makeVector(ant.theta - Math.PI / 2, 1)));
+      var examiningRight = false;
+      if (insideGrid(game.grid, posRight)) {
+        var rightOccupied = lookupInGrid(game.grid, posRight).map(function (id) {
+          return game.entities[id];
+        }).filter(function (e) {
+          return getEntityConfig(game, ant).blockingTypes.includes(e.type);
+        }).length > 0;
+        if (rightOccupied && Math.random() < 0.33) {
+          queueAction(game, ant, makeAction(game, ant, 'EXAMINE', 'right'));
+          examiningRight = true;
+        }
+      }
+
+      var posLeft = round(add(ant.position, makeVector(ant.theta + Math.PI / 2, 1)));
+      if (insideGrid(posLeft)) {
+        var leftOccupied = lookupInGrid(game.grid, posLeft).map(function (id) {
+          return game.entities[id];
+        }).filter(function (e) {
+          return getEntityConfig(game, ant).blockingTypes.includes(e.type);
+        }).length > 0;
+        if (!examiningRight && leftOccupied && Math.random() < 0.33) {
+          queueAction(game, ant, makeAction(game, ant, 'EXAMINE', 'left'));
+        }
+      }
+    }
+  }
+
+  // PUTDOWN
+  var holdingFood = ant.holding != null && ant.holding.type == 'FOOD';
+  var holdingDirt = ant.holding != null && ant.holding.type == 'DIRT';
+  var holdingEgg = ant.holding != null && ant.holding.type == 'EGG';
+  var holdingLarva = ant.holding != null && ant.holding.type == 'LARVA';
+  var holdingPupa = ant.holding != null && ant.holding.type == 'PUPA';
+
+  if (ant.holding != null) {
+    var possiblePutdownPositions = getNeighborPositions(game, ant, true /*external*/);
+    var _iteratorNormalCompletion4 = true;
+    var _didIteratorError4 = false;
+    var _iteratorError4 = undefined;
+
+    try {
+      for (var _iterator4 = possiblePutdownPositions[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+        var putdownPos = _step4.value;
+
+        var putdownLoc = { position: putdownPos, playerID: ant.playerID };
+        var _occupied2 = lookupInGrid(game.grid, putdownPos).map(function (id) {
+          return game.entities[id];
+        }).filter(function (e) {
+          return e.type.slice(0, 4) != 'DEAD' && e.type != 'BACKGROUND' && e.type != 'SPIDER_WEB' && e.type != 'ANT';
+        }).length > 0;
+        var nextTheta = vectorTheta(subtract(ant.position, putdownPos));
+
+        // if Returning and near colony token, put down
+        var fQ = game.config[ant.playerID].COLONY.quantity;
+        if (ant.task == 'RETURN' && (inTokenRadius(game, putdownLoc, 'COLONY') || getPheromoneAtPosition(game, putdownLoc.position, 'COLONY', ant.playerID) == fQ) && !_occupied2) {
+          if (!isFacing(ant, putdownPos)) {
+            queueAction(game, ant, makeAction(game, ant, 'TURN', nextTheta));
+          }
+          queueAction(game, ant, makeAction(game, ant, 'PUTDOWN', { position: putdownPos }));
+          return;
+        }
+        // if holding dirt and near putdown token, put it down
+        if ((holdingDirt || ant.task == 'MOVE_DIRT') && (inTokenRadius(game, putdownLoc, 'DIRT_DROP') || getPheromoneAtPosition(game, putdownPos, 'DIRT_DROP', ant.playerID) == game.config[ant.playerID]['DIRT_DROP'].quantity) && !_occupied2) {
+          if (!isFacing(ant, putdownPos)) {
+            queueAction(game, ant, makeAction(game, ant, 'TURN', nextTheta));
+          }
+          queueAction(game, ant, makeAction(game, ant, 'PUTDOWN', { position: putdownPos }));
+          return;
+        }
+        // if holding egg and near putdown token, put it down
+        if ((holdingEgg || ant.task == 'MOVE_EGG') && inTokenRadius(game, putdownLoc, 'EGG') && !_occupied2) {
+          if (!isFacing(ant, putdownPos)) {
+            queueAction(game, ant, makeAction(game, ant, 'TURN', nextTheta));
+          }
+          queueAction(game, ant, makeAction(game, ant, 'PUTDOWN', { position: putdownPos }));
+          return;
+        }
+        // if holding larva and near putdown token, put it down
+        if ((holdingLarva || ant.task == 'MOVE_LARVA') && inTokenRadius(game, putdownLoc, 'MOVE_LARVA_PHER') && !_occupied2) {
+          if (!isFacing(ant, putdownPos)) {
+            queueAction(game, ant, makeAction(game, ant, 'TURN', nextTheta));
+          }
+          queueAction(game, ant, makeAction(game, ant, 'PUTDOWN', { position: putdownPos }));
+          return;
+        }
+        // if holding pupa and near putdown token, put it down
+        if ((holdingPupa || ant.task == 'MOVE_PUPA') && inTokenRadius(game, putdownLoc, 'PUPA') && !_occupied2) {
+          if (!isFacing(ant, putdownPos)) {
+            queueAction(game, ant, makeAction(game, ant, 'TURN', nextTheta));
+          }
+          queueAction(game, ant, makeAction(game, ant, 'PUTDOWN', { position: putdownPos }));
+          return;
+        }
+      }
+    } catch (err) {
+      _didIteratorError4 = true;
+      _iteratorError4 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion4 && _iterator4.return) {
+          _iterator4.return();
+        }
+      } finally {
+        if (_didIteratorError4) {
+          throw _iteratorError4;
+        }
+      }
+    }
+  }
+
+  // MOVE
+  antDecideMove(game, ant);
+};
+
+var entityFight = function entityFight(game, entity, target) {
+  if (!areNeighbors(game, entity, target)) return;
+  if (target.type.slice(0, 4) === 'DEAD') return;
+  if (target.position == null) return;
+
+  var isFacingAtAll = false;
+  getEntityPositions(game, target).forEach(function (pos) {
+    getPositionsInFront(game, entity).forEach(function (fp) {
+      if (equals(pos, fp)) {
+        isFacingAtAll = true;
+      }
+    });
+  });
+  if (!isFacingAtAll) {
+    var nextTheta = vectorTheta(subtract(entity.position, target.position));
+    getEntityPositions(game, target).forEach(function (pos) {
+      getNeighborPositions(game, entity).forEach(function (fp) {
+        if (equals(pos, fp)) {
+          nextTheta = vectorTheta(subtract(entity.position, fp));
+        }
+      });
+    });
+    // HACK: isFacing doesn't quite working for some diagonal directions,
+    // so if you're already facing the direction you should be, then just let
+    // the attack go through
+    if (!closeTo(entity.theta, nextTheta)) {
+      stackAction(game, entity, makeAction(game, entity, 'TURN', nextTheta));
+      critterStartCurrentAction(game, entity);
+      return;
+    }
+  }
+
+  var damage = entity.damage;
+  if (entity.actions.length > 0 && entity.actions[0].type == 'GRAPPLE') {
+    damage = 0.34;
+  }
+  // armored queen takes half damage from the front
+  if (target.caste == 'QUEEN' && game.config[target.playerID].queenArmored) {
+    var inFront = false;
+    var posInFront = getPositionsInFront(game, target);
+    var _iteratorNormalCompletion5 = true;
+    var _didIteratorError5 = false;
+    var _iteratorError5 = undefined;
+
+    try {
+      for (var _iterator5 = getEntityPositions(game, entity)[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+        var p = _step5.value;
+        var _iteratorNormalCompletion6 = true;
+        var _didIteratorError6 = false;
+        var _iteratorError6 = undefined;
+
+        try {
+          for (var _iterator6 = posInFront[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+            var i = _step6.value;
+
+            if (equals(p, i)) {
+              inFront = true;
+            }
+          }
+        } catch (err) {
+          _didIteratorError6 = true;
+          _iteratorError6 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion6 && _iterator6.return) {
+              _iterator6.return();
+            }
+          } finally {
+            if (_didIteratorError6) {
+              throw _iteratorError6;
+            }
+          }
+        }
+      }
+    } catch (err) {
+      _didIteratorError5 = true;
+      _iteratorError5 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion5 && _iterator5.return) {
+          _iterator5.return();
+        }
+      } finally {
+        if (_didIteratorError5) {
+          throw _iteratorError5;
+        }
+      }
+    }
+
+    if (inFront) {
+      damage /= 2;
+    }
+  }
+
+  // dash deals double damage
+  if (entity.prevActionType == 'DASH') {
+    damage *= 4;
+  }
+
+  dealDamageToEntity(game, target, damage);
+
+  // Spiked larva
+  if (target.hp <= 0 && target.type == 'LARVA' && game.config[target.playerID].spikedLarva) {
+    dealDamageToEntity(game, entity, game.config[target.playerID].spikedLarva);
+  }
+
+  // Centipedes grow when they kill things
+  if (entity.type == 'CENTIPEDE' && target.hp <= 0) {
+    var lastSegmentPos = entity.segments[entity.segments.length - 1];
+    addSegmentToEntity(game, entity, add(lastSegmentPos, Math.random() < 0.5 ? { x: 1, y: 0 } : { x: 0, y: 1 }));
+  }
+
+  // Roly Polies roll up when attacked
+  if (target.type == 'ROLY_POLY') {
+    target.rolled = true;
+  }
+
+  // ALERT pheromone
+  if ((entity.type == 'ANT' || entity.type == 'TERMITE') && (entity.timeOnTask < 700 || entity.task != 'DEFEND') && target.type != 'VINE') {
+    getEntityPositions(game, entity).forEach(function (pos) {
+      return fillPheromone(game, pos, 'ALERT', entity.playerID);
+    });
+  }
+
+  // Trapjaw ants
+  if (game.config[entity.playerID].trapjaw && entity.caste == 'MINIMA' && target.caste != 'MINIMA' && target.caste != 'SUB_MINIMA' && target.caste != 'TERMITE_WORKER') {
+    addTrapjaw(game, target, entity);
+  }
+
+  // Queen can stun
+  if (entity.caste == 'QUEEN' && game.config[entity.playerID].queenStun) {
+    queueAction(game, target, makeAction(game, target, 'STUN'));
+  }
+
+  // attacked ants holding stuff put it down
+  if (target.holding != null) {
+    queueAction(game, target, makeAction(game, target, 'PUTDOWN'));
   }
 };
 
@@ -7331,6 +7993,9 @@ var initBaseState = function initBaseState(gridSize, numPlayers) {
 
     pheromoneDisplay: {
       COLONY: false,
+      FOOD: true,
+      ALERT: true,
+      FOLLOW: true,
       WATER: true,
       STEAM: true,
       HEAT: true,
@@ -10184,11 +10849,11 @@ function LevelEditor(props) {
     gridWidth: game.gridHeight,
     gridHeight: game.gridWidth,
     playerID: 0,
-    paletteMode: 'MARQUEE',
+    paletteMode: 'CREATE ENTITIES',
 
     // entity creation mode
     deleteMode: false,
-    entityType: 'ANT',
+    entityType: 'FOOD',
     subdividing: false,
     pheromoneType: 'HEAT',
     background: 'SKYLINE',

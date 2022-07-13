@@ -69,6 +69,9 @@ const initBaseState = (
 
     pheromoneDisplay: {
       COLONY: false,
+      FOOD: true,
+      ALERT: true,
+      FOLLOW: true,
       WATER: true,
       STEAM: true,
       HEAT: true,

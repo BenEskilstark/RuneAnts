@@ -23,12 +23,12 @@ const config = {
 };
 
 const nonMoltenPheromoneBlockingTypes = [
-  'DIRT',  'STONE', 'DOODAD', 'TURRET',
+  'DIRT',  'STONE', 'DOODAD',
 ];
 const pheromoneBlockingTypes = [
   ...nonMoltenPheromoneBlockingTypes,
-  'ICE', 'SULPHUR',
-  'STEEL', 'IRON', 'SILICON', 'GLASS',
+  'ICE',
+  'STEEL', 'IRON',
 ];
 
 const pheromones = {
@@ -36,11 +36,48 @@ const pheromones = {
     quantity: 350,
     decayAmount: 1,
     color: 'rgb(155, 227, 90)',
-    tileIndex: 0,
+    tileIndex: 1,
 
-    blockingTypes: [...pheromoneBlockingTypes, 'COAL'],
+    blockingTypes: [...pheromoneBlockingTypes],
     blockingPheromones: [],
   },
+  FOOD: {
+    quantity: 100,
+    decayAmount: 40,
+    isDispersing: true,
+    decayRate: 0.03, // how much it decays per tick
+    color: 'rgb(0, 255, 0)',
+    tileIndex: 0,
+
+    blockingTypes: [...pheromoneBlockingTypes],
+    blockingPheromones: [],
+  },
+  ALERT: {
+    quantity: 60,
+    decayAmount: 10,
+    isDispersing: true,
+    decayRate: 0.5, // how much it decays per tick
+    color: 'rgb(255, 0, 0)',
+    tileIndex: 2,
+    blockingTypes: [...pheromoneBlockingTypes],
+    blockingPheromones: [],
+  },
+  FOLLOW: {
+    quantity: 100,
+    decayAmount: 10,
+    isDispersing: true,
+    decayRate: 0.1, // how much it decays per tick
+    color: 'rgb(210, 105, 30)',
+    tileIndex: 1,
+    blockingTypes: [...pheromoneBlockingTypes],
+    blockingPheromones: [],
+  },
+
+
+
+
+
+
   LIGHT: {
     quantity: 350,
     decayAmount: 1,

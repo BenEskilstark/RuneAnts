@@ -22,19 +22,51 @@ var config = {
 
 };
 
-var nonMoltenPheromoneBlockingTypes = ['DIRT', 'STONE', 'DOODAD', 'TURRET'];
-var pheromoneBlockingTypes = [].concat(nonMoltenPheromoneBlockingTypes, ['ICE', 'SULPHUR', 'STEEL', 'IRON', 'SILICON', 'GLASS']);
+var nonMoltenPheromoneBlockingTypes = ['DIRT', 'STONE', 'DOODAD'];
+var pheromoneBlockingTypes = [].concat(nonMoltenPheromoneBlockingTypes, ['ICE', 'STEEL', 'IRON']);
 
 var pheromones = {
   COLONY: {
     quantity: 350,
     decayAmount: 1,
     color: 'rgb(155, 227, 90)',
-    tileIndex: 0,
+    tileIndex: 1,
 
-    blockingTypes: [].concat(_toConsumableArray(pheromoneBlockingTypes), ['COAL']),
+    blockingTypes: [].concat(_toConsumableArray(pheromoneBlockingTypes)),
     blockingPheromones: []
   },
+  FOOD: {
+    quantity: 100,
+    decayAmount: 40,
+    isDispersing: true,
+    decayRate: 0.03, // how much it decays per tick
+    color: 'rgb(0, 255, 0)',
+    tileIndex: 0,
+
+    blockingTypes: [].concat(_toConsumableArray(pheromoneBlockingTypes)),
+    blockingPheromones: []
+  },
+  ALERT: {
+    quantity: 60,
+    decayAmount: 10,
+    isDispersing: true,
+    decayRate: 0.5, // how much it decays per tick
+    color: 'rgb(255, 0, 0)',
+    tileIndex: 2,
+    blockingTypes: [].concat(_toConsumableArray(pheromoneBlockingTypes)),
+    blockingPheromones: []
+  },
+  FOLLOW: {
+    quantity: 100,
+    decayAmount: 10,
+    isDispersing: true,
+    decayRate: 0.1, // how much it decays per tick
+    color: 'rgb(210, 105, 30)',
+    tileIndex: 1,
+    blockingTypes: [].concat(_toConsumableArray(pheromoneBlockingTypes)),
+    blockingPheromones: []
+  },
+
   LIGHT: {
     quantity: 350,
     decayAmount: 1,
@@ -433,8 +465,8 @@ var config = {
 
   AGENT: true,
 
-  pickupTypes: ['FOOD', 'DIRT', 'TOKEN', 'DYNAMITE', 'COAL', 'IRON', 'STEEL'],
-  blockingTypes: ['FOOD', 'DIRT', 'AGENT', 'STONE', 'DOODAD', 'WORM', 'TOKEN', 'DYNAMITE', 'COAL', 'IRON', 'STEEL'],
+  pickupTypes: ['FOOD', 'DIRT', 'TOKEN', 'DYNAMITE', 'STEEL'],
+  blockingTypes: ['FOOD', 'DIRT', 'AGENT', 'STONE', 'DOODAD', 'WORM', 'TOKEN', 'ANT', 'STEEL'],
 
   // action params
   MOVE: {
@@ -484,6 +516,8 @@ var config = {
     forwardMovementBonus: 0,
     prevPositionPenalty: -100,
     ALERT: 500,
+    FOOD: 100,
+    FOLLOW: 10,
     COLONY: -1
   },
   RETRIEVE: {
@@ -491,13 +525,15 @@ var config = {
     forwardMovementBonus: 100,
     prevPositionPenalty: -100,
     ALERT: 300,
+    FOOD: 300,
     COLONY: -100
   },
   RETURN: {
-    base: 10,
+    base: 3,
     forwardMovementBonus: 500,
-    prevPositionPenalty: -100,
+    prevPositionPenalty: -1000,
     ALERT: 0,
+    FOOD: 20,
     COLONY: 1000
   },
   MOVE_DIRT: {
@@ -527,6 +563,8 @@ var make = function make(game, position, playerID) {
 
     task: 'WANDER',
     timeOnTask: 0,
+
+    foodPherQuantity: 0, // tracks how much food pheromone to place
 
     // this frame offset allows iterating through spritesheets across
     // multiple actions (rn only used by queen ant doing one full walk
@@ -853,6 +891,8 @@ var Entities = {
   STONE: require('./stone.js'),
   STEEL: require('./steel.js'),
 
+  BASE: require('./base.js'),
+
   FOOD: require('./food.js'),
   AGENT: require('./agent.js'),
   TOKEN: require('./token.js'),
@@ -860,9 +900,8 @@ var Entities = {
   ANT: require('./ant.js'),
   WORM: require('./worm.js'),
 
-  DYNAMITE: require('./dynamite.js'),
+  DYNAMITE: require('./dynamite.js')
 
-  BASE: require('./base.js')
 };
 
 module.exports = {
@@ -2981,6 +3020,23 @@ var getEntityPheromoneSources = function getEntityPheromoneSources(game, entity)
       position: entity.position,
       quantity: entity.quantity
     }];
+  }
+
+  if (entity.holding != null && entity.holding.type == 'FOOD' && entity.task == 'RETURN') {
+    pheromoneType = 'FOOD';
+    playerID = entity.playerID;
+    quantity = entity.foodPherQuantity || 0;
+    if (quantity == 0) {
+      return [];
+    } else {
+      return [{
+        id: entity.id,
+        playerID: playerID,
+        pheromoneType: pheromoneType,
+        position: entity.position,
+        quantity: quantity
+      }];
+    }
   }
   return [];
 };

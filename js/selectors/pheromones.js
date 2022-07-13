@@ -94,6 +94,26 @@ const getEntityPheromoneSources = (
       quantity: entity.quantity,
     }];
   }
+
+  if (
+    entity.holding != null && entity.holding.type == 'FOOD'
+    && entity.task == 'RETURN'
+  ) {
+    pheromoneType = 'FOOD';
+    playerID = entity.playerID;
+    quantity = entity.foodPherQuantity || 0;
+    if (quantity == 0) {
+      return [];
+    } else {
+      return [{
+        id: entity.id,
+        playerID,
+        pheromoneType,
+        position: entity.position,
+        quantity,
+      }];
+    }
+  }
   return [];
 }
 

@@ -2,15 +2,11 @@
 
 - - - - - - - ANTS - - - - - - -
   - ant behavior
-    - retrieve food
     - fight/grapple
-    - spread food pheromone when they move while holding food
-  - entities:
-    - base -> colony
-      - colony system that handles food -> ants
   - scenario:
-    - food spawn system
     - touch and drag to add pheromone
+      - level editor mode for not interfering with mouse
+    - food spawn system
 
 
 - - - - - POLISH - - - - -
@@ -18,6 +14,7 @@
     - hotkey for opening level editor
   - Add music from Antocracy
   - Dead ants
+  - make base look like an ant hill
   - favicon
 
 
@@ -28,6 +25,8 @@
 
 
 - - - - - - - FIX - - - - - - - -
+  - ants are trying to pick stuff up and failing repeatedly
+  - ants get in each other's way while carrying food
   - pheromoneWorker appears to not update after reset in level editor
 
 
@@ -40,6 +39,7 @@
 
 
 - - - - - - REFACTOR - - - - - -
+  - clean up config
   - Use UI components package
   - Use utils components package
 

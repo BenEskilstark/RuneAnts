@@ -20,6 +20,8 @@ const Entities = {
   STONE: require('./stone.js'),
   STEEL: require('./steel.js'),
 
+  BASE: require('./base.js'),
+
   FOOD: require('./food.js'),
   AGENT: require('./agent.js'),
   TOKEN: require('./token.js'),
@@ -29,7 +31,6 @@ const Entities = {
 
   DYNAMITE: require('./dynamite.js'),
 
-  BASE: require('./base.js'),
 };
 
 module.exports = {

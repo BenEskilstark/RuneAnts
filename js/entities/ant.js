@@ -16,13 +16,13 @@ const config = {
 
   pickupTypes: [
     'FOOD', 'DIRT', 'TOKEN',
-    'DYNAMITE', 'COAL', 'IRON', 'STEEL',
+    'DYNAMITE', 'STEEL',
   ],
   blockingTypes: [
     'FOOD', 'DIRT', 'AGENT',
     'STONE', 'DOODAD', 'WORM',
-    'TOKEN', 'DYNAMITE',
-    'COAL', 'IRON', 'STEEL',
+    'TOKEN', 'ANT',
+    'STEEL',
   ],
 
   // action params
@@ -73,6 +73,8 @@ const config = {
     forwardMovementBonus: 0,
     prevPositionPenalty: -100,
     ALERT: 500,
+    FOOD: 100,
+    FOLLOW: 10,
     COLONY: -1,
   },
   RETRIEVE: {
@@ -80,13 +82,15 @@ const config = {
     forwardMovementBonus: 100,
     prevPositionPenalty: -100,
     ALERT: 300,
+    FOOD: 300,
     COLONY: -100,
   },
   RETURN: {
-    base: 10,
+    base: 3,
     forwardMovementBonus: 500,
-    prevPositionPenalty: -100,
+    prevPositionPenalty: -1000,
     ALERT: 0,
+    FOOD: 20,
     COLONY: 1000,
   },
   MOVE_DIRT: {
@@ -123,6 +127,8 @@ const make = (
 
     task: 'WANDER',
     timeOnTask: 0,
+
+    foodPherQuantity: 0, // tracks how much food pheromone to place
 
     // this frame offset allows iterating through spritesheets across
     // multiple actions (rn only used by queen ant doing one full walk
