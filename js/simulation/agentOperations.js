@@ -323,6 +323,38 @@ const agentDecideAction = (game: Game, agent: Agent): void => {
 
 const antDecideAction = (game, ant) => {
   // FIGHT
+  if (ant.holding == null) {
+    const targets = getNeighborEntities(game, ant, true)
+      .filter(e => {
+        if (e.position == null) return false;
+        if (isDiagonalMove(ant.position, e.position) && e.type == 'ANT') return false;
+        return (
+          // (game.config.critterTypes.includes(e.type)) ||
+          (e.type == 'ANT' && e.playerID != ant.playerID)
+        );
+      });
+
+    if (targets.length > 0) {
+      // always prefer to grapple if possible
+      let filteredTargets = targets.filter(t => {
+        return t.type == 'ANT';
+        // if (ant.caste != 'MINIMA') return true;
+        // return t.caste == 'MINIMA';
+      });
+      let target = filteredTargets.length > 0 ? oneOf(filteredTargets) : oneOf(targets);
+      let actionType = 'BITE';
+      if (
+        ant.type == 'ANT' && target.type == 'ANT'
+        // (target.caste == 'MINIMA' && ant.caste == 'MINIMA')
+        // || (target.caste == 'TERMITE_WORKER' && ant.caste == 'MINIMA')
+        // || (target.caste == 'MEDIA' && ant.caste == 'MEDIA')
+      ) {
+        actionType = 'GRAPPLE';
+      }
+      queueAction(game, ant, makeAction(game, ant, actionType, target));
+      return;
+    }
+  }
 
   // PICK UP FOOD
   const neighboringFood = getNeighborPositions(game, ant, true /* external */)
@@ -336,427 +368,13 @@ const antDecideAction = (game, ant) => {
     const pickup = oneOf(neighboringFood);
     const position = pickup.position;
     queueAction(game, ant, makeAction(game, ant, 'PICKUP', {pickup, position}));
+    return;
   }
 
   // MOVE
   agentDecideMove(game, ant);
 };
 
-
-const exampleAntDecideAction = (game: Game, ant: Ant): void => {
-  const config = getEntityConfig(game, ant);
-
-  // trapjawing ants don't do anything
-  if (ant.position == null) return;
-
-  // allow queen to feed
-  if (ant.holding != null) {
-    // FEED
-    const neighboringLarva = getNeighborPositions(game, ant, true /* external */)
-      .map(pos => {
-        return lookupInGrid(game.grid, pos)
-          .filter(id => game.entities[id].type == 'LARVA')[0];
-      })
-      .filter(id => id != null)
-      .map(id => game.entities[id])
-      .filter(l => l.foodNeed > 0);
-    if (ant.holding.type == 'FOOD' && neighboringLarva.length > 0) {
-      queueAction(game, ant, makeAction(game, ant, 'FEED'));
-      return;
-    }
-  }
-
-  // don't do anything else if this ant is the player's queen
-  if (
-    ant.caste == 'QUEEN' && game.players[ant.playerID].type == 'HUMAN' && !ant.autopilot
-  ) {
-    const token = game.TOKEN
-      .map(id => game.entities[id])
-      .filter(t => t.pheromoneType == 'QUEEN_FOLLOW' && t.playerID == game.playerID)[0];
-    // queen moves "automatically" if the token exists, ie uses this function
-    if (token != null) {
-      antDecideMove(game, ant);
-    }
-    return;
-  }
-
-  // if this is a honeypot ant, the affix to dirt or stone
-  // AND if affixed, then lay food every once in a while
-  if (ant.caste == 'HONEY_POT') {
-    if (!ant.affixed) { // see if you should affix
-      if (canLayFood(game, ant)) {
-        const positions = getPositionsInFront(game, ant);
-        for (const pos of positions) {
-          const occupied = lookupInGrid(game.grid, pos)
-            .filter(id => ant.id != id)
-            .map(id => game.entities[id])
-            .filter(e => e.type == 'DIRT' || e.type == 'STONE')
-            .length > 0;
-          const inGrid = insideGrid(game.grid, pos);
-          if (occupied && inGrid && thetaToDir(ant.theta, true) != null) {
-            ant.affixed = true;
-            return; // affixed honeypots don't move
-          }
-        }
-      }
-    } else {
-      // laying food
-      if (ant.foodLayingCooldown < 0) {
-        ant.foodLayingCooldown = config.foodLayingCooldown
-
-        const positions = getPositionsBehind(game, ant);
-        for (const pos of positions) {
-          const occupied = lookupInGrid(game.grid, pos)
-            .filter(id => ant.id != id)
-            .length > 0;
-          const inGrid = insideGrid(game.grid, pos);
-          if (!occupied && inGrid && thetaToDir(ant.theta, true) != null) {
-            addEntity(game, makeFood(game, pos));
-          }
-        }
-      } else {
-        ant.foodLayingCooldown -= game.timeSinceLastTick;
-      }
-      return; // affixed honeypots don't move
-    }
-  }
-
-  // FIGHT
-  if (
-    ant.holding == null &&
-    // getPheromoneAtPosition(game, ant.position, 'PATROL_DEFEND_PHER', ant.playerID) == 0 &&
-    // ^^ handle only based on task, not pheromone
-    config.damage > 0
-  ) {
-    const domPher =
-      getPheromoneAtPosition(game, ant.position, 'DOMESTICATE', ant.playerID) > 0;
-    const rallyPher =
-      getPheromoneAtPosition(game, ant.position, 'PATROL_DEFEND_PHER', ant.playerID) > 0;
-    const targets = getNeighborEntities(game, ant, true)
-      .filter(e => {
-        if (e.position == null) return false;
-        if (
-          isDiagonalMove(ant.position, e.position) && e.type == 'ANT'
-          && e.caste == 'MINIMA'
-        ) return false;
-        return (
-          (game.config.critterTypes.includes(e.type) && !domPher) ||
-          (e.type == 'ANT' && e.playerID != ant.playerID) ||
-          (e.type == 'TERMITE' && e.playerID != ant.playerID) ||
-          // (e.type == 'FOOT' && e.state == 'stomping') ||
-          // ants alerted by the queen will attack anything with hp
-          (e.playerID != ant.playerID && e.hp > 0 && e.type != 'FOOT' &&
-            getPheromoneAtPosition(game, ant.position, 'QUEEN_ALERT', ant.playerID) > 0
-            && ant.task == 'DEFEND')
-        );
-      });
-
-    if (targets.length > 0 && ant.task != 'PATROL_DEFEND' && !rallyPher) {
-      // always prefer to grapple if possible
-      let filteredTargets = targets.filter(t => {
-        if (ant.caste != 'MINIMA') return true;
-        return t.caste == 'MINIMA';
-      });
-      let shouldFight = true;
-      let target = filteredTargets.length > 0 ? oneOf(filteredTargets) : oneOf(targets);
-      let actionType = 'BITE';
-      if (
-        (target.caste == 'MINIMA' && ant.caste == 'MINIMA')
-        || (target.caste == 'TERMITE_WORKER' && ant.caste == 'MINIMA')
-        // || (target.caste == 'MEDIA' && ant.caste == 'MEDIA')
-      ) {
-        // special case for queen with break up grapple ability
-        if (
-          getPheromoneAtPosition(game, ant.position, 'QUEEN_DISPERSE', ant.playerID) > 0 ||
-          getPheromoneAtPosition(game, ant.position, 'QUEEN_DISPERSE', target.playerID) > 0
-        ) {
-          if (ant.playerID == game.playerID && game.config[playerID].queenBreaksUpGrapple) {
-            actionType = 'BITE';
-          } else {
-            shouldFight = false;
-          }
-        } else {
-          actionType = 'GRAPPLE';
-        }
-      }
-      if (shouldFight) {
-        // special case for CPU queens w/whirlwind or dash ability
-        if (
-          ant.caste == 'QUEEN' &&
-          game.config[ant.playerID].queenAbilities.includes('JUMP') &&
-          Math.random() < 0.2
-        ) {
-          actionType = 'DASH';
-          target = {nextPos: {...target.position}};
-        }
-        if (
-          ant.caste == 'QUEEN' &&
-          game.config[ant.playerID].queenAbilities.includes('WHIRLWIND') &&
-          Math.random() < 0.2
-        ) {
-          actionType = 'WHIRLWIND';
-        }
-        queueAction(game, ant, makeAction(game, ant, actionType, target));
-        return;
-      }
-    }
-  }
-
-  // PICKUP
-  if (ant.holdingIDs.length < config.maxHold) {
-    // cpu queen
-    if (ant.caste == 'QUEEN') {
-      antDecideMove(game, ant);
-      return;
-    }
-
-    antPickupNeighbor(game, ant);
-
-    // EXAMINE
-    if (
-      ant.caste == 'MINIMA' && ant.actions.length == 0 && ant.task == 'WANDER' &&
-      getPheromoneAtPosition(game, ant.position, 'QUEEN_PHER', ant.playerID) == 0
-    ) {
-      const posRight = round(add(ant.position, makeVector(ant.theta - Math.PI / 2, 1)));
-      let examiningRight = false;
-      if (insideGrid(game.grid, posRight)) {
-        const rightOccupied = lookupInGrid(game.grid, posRight)
-          .map(id => game.entities[id])
-          .filter(e => getEntityConfig(game, ant).blockingTypes.includes(e.type))
-          .length > 0;
-        if (rightOccupied && Math.random() < 0.33) {
-          queueAction(game, ant, makeAction(game, ant, 'EXAMINE', 'right'));
-          examiningRight = true;
-        }
-      }
-
-      const posLeft = round(add(ant.position, makeVector(ant.theta + Math.PI / 2, 1)));
-      if (insideGrid(posLeft)) {
-        const leftOccupied = lookupInGrid(game.grid, posLeft)
-          .map(id => game.entities[id])
-          .filter(e => getEntityConfig(game, ant).blockingTypes.includes(e.type))
-          .length > 0;
-        if (!examiningRight && leftOccupied && Math.random() < 0.33) {
-          queueAction(game, ant, makeAction(game, ant, 'EXAMINE', 'left'));
-        }
-      }
-    }
-  }
-
-  // PUTDOWN
-  const holdingFood = ant.holding != null && ant.holding.type == 'FOOD';
-  const holdingDirt = ant.holding != null && ant.holding.type == 'DIRT';
-  const holdingEgg = ant.holding != null && ant.holding.type == 'EGG';
-  const holdingLarva = ant.holding != null && ant.holding.type == 'LARVA';
-  const holdingPupa = ant.holding != null && ant.holding.type == 'PUPA';
-
-  if (ant.holding != null) {
-    const possiblePutdownPositions = getNeighborPositions(game, ant, true /*external*/);
-    for (const putdownPos of possiblePutdownPositions) {
-      const putdownLoc = {position: putdownPos, playerID: ant.playerID};
-      const occupied = lookupInGrid(game.grid, putdownPos)
-        .map(id => game.entities[id])
-        .filter(e => {
-          return e.type.slice(0, 4) != 'DEAD' && e.type != 'BACKGROUND'
-            && e.type != 'SPIDER_WEB' && e.type != 'ANT';
-        })
-        .length > 0;
-      const nextTheta = vectorTheta(subtract(ant.position, putdownPos));
-
-      // if Returning and near colony token, put down
-      const fQ = game.config[ant.playerID].COLONY.quantity;
-      if (
-        (ant.task == 'RETURN') &&
-        (
-          inTokenRadius(game, putdownLoc, 'COLONY') ||
-          getPheromoneAtPosition(game, putdownLoc.position, 'COLONY', ant.playerID) == fQ
-        ) &&
-        !occupied
-      ) {
-        if (!isFacing(ant, putdownPos)) {
-          queueAction(game, ant, makeAction(game, ant, 'TURN', nextTheta));
-        }
-        queueAction(game, ant, makeAction(game, ant, 'PUTDOWN', {position: putdownPos}));
-        return;
-      }
-      // if holding dirt and near putdown token, put it down
-      if (
-        (holdingDirt || ant.task == 'MOVE_DIRT')
-        && (
-          inTokenRadius(game, putdownLoc, 'DIRT_DROP') ||
-          getPheromoneAtPosition(game, putdownPos, 'DIRT_DROP', ant.playerID) ==
-            game.config[ant.playerID]['DIRT_DROP'].quantity
-        )
-        && !occupied
-      ) {
-        if (!isFacing(ant, putdownPos)) {
-          queueAction(game, ant, makeAction(game, ant, 'TURN', nextTheta));
-        }
-        queueAction(game, ant, makeAction(game, ant, 'PUTDOWN', {position: putdownPos}));
-        return;
-      }
-      // if holding egg and near putdown token, put it down
-      if (
-        (holdingEgg || ant.task == 'MOVE_EGG')
-        && inTokenRadius(game, putdownLoc, 'EGG')
-        && !occupied
-      ) {
-        if (!isFacing(ant, putdownPos)) {
-          queueAction(game, ant, makeAction(game, ant, 'TURN', nextTheta));
-        }
-        queueAction(game, ant, makeAction(game, ant, 'PUTDOWN', {position: putdownPos}));
-        return;
-      }
-      // if holding larva and near putdown token, put it down
-      if (
-        (holdingLarva || ant.task == 'MOVE_LARVA')
-        && inTokenRadius(game, putdownLoc, 'MOVE_LARVA_PHER')
-        && !occupied
-      ) {
-        if (!isFacing(ant, putdownPos)) {
-          queueAction(game, ant, makeAction(game, ant, 'TURN', nextTheta));
-        }
-        queueAction(game, ant, makeAction(game, ant, 'PUTDOWN', {position: putdownPos}));
-        return;
-      }
-      // if holding pupa and near putdown token, put it down
-      if (
-        (holdingPupa || ant.task == 'MOVE_PUPA')
-        && inTokenRadius(game, putdownLoc, 'PUPA')
-        && !occupied
-      ) {
-        if (!isFacing(ant, putdownPos)) {
-          queueAction(game, ant, makeAction(game, ant, 'TURN', nextTheta));
-        }
-        queueAction(game, ant, makeAction(game, ant, 'PUTDOWN', {position: putdownPos}));
-        return;
-      }
-    }
-  }
-
-  // MOVE
-  antDecideMove(game, ant);
-};
-
-
-
-
-
-
-
-const entityFight = (game: Game, entity: Entity, target: ?Entity): void => {
-  if (!areNeighbors(game, entity, target)) return;
-  if (target.type.slice(0, 4) === 'DEAD') return;
-  if (target.position == null) return;
-
-  let isFacingAtAll = false;
-  getEntityPositions(game, target)
-    .forEach(pos => {
-      getPositionsInFront(game, entity).forEach(fp => {
-        if (equals(pos, fp)) {
-          isFacingAtAll = true;
-        }
-      })
-    });
-  if (!isFacingAtAll) {
-    let nextTheta = vectorTheta(subtract(entity.position, target.position));
-    getEntityPositions(game, target)
-      .forEach(pos => {
-        getNeighborPositions(game, entity).forEach(fp => {
-          if (equals(pos, fp)) {
-            nextTheta = vectorTheta(subtract(entity.position, fp));
-          }
-        })
-      });
-    // HACK: isFacing doesn't quite working for some diagonal directions,
-    // so if you're already facing the direction you should be, then just let
-    // the attack go through
-    if (!closeTo(entity.theta, nextTheta)) {
-      stackAction(game, entity, makeAction(game, entity, 'TURN', nextTheta));
-      critterStartCurrentAction(game, entity);
-      return;
-    }
-  }
-
-  let damage = entity.damage;
-  if (entity.actions.length > 0 && entity.actions[0].type == 'GRAPPLE') {
-    damage = 0.34;
-  }
-  // armored queen takes half damage from the front
-  if (target.caste == 'QUEEN' && game.config[target.playerID].queenArmored) {
-    let inFront = false;
-    const posInFront = getPositionsInFront(game, target);
-    for (const p of getEntityPositions(game, entity)) {
-      for (const i of posInFront) {
-        if (equals(p, i)) {
-          inFront = true;
-        }
-      }
-    }
-    if (inFront) {
-      damage /= 2;
-    }
-  }
-
-  // dash deals double damage
-  if (entity.prevActionType == 'DASH') {
-    damage *= 4;
-  }
-
-  dealDamageToEntity(game, target, damage);
-
-  // Spiked larva
-  if (
-    target.hp <= 0 && target.type == 'LARVA' &&
-    game.config[target.playerID].spikedLarva
-  ) {
-    dealDamageToEntity(game, entity, game.config[target.playerID].spikedLarva);
-  }
-
-  // Centipedes grow when they kill things
-  if (entity.type == 'CENTIPEDE' && target.hp <= 0) {
-    const lastSegmentPos = entity.segments[entity.segments.length - 1];
-    addSegmentToEntity(
-      game, entity,
-      add(lastSegmentPos, Math.random() < 0.5 ? {x: 1, y: 0} : {x: 0, y: 1}),
-    );
-  }
-
-  // Roly Polies roll up when attacked
-  if (target.type == 'ROLY_POLY') {
-    target.rolled = true;
-  }
-
-  // ALERT pheromone
-  if (
-    (entity.type == 'ANT' || entity.type == 'TERMITE') &&
-    (entity.timeOnTask < 700 || entity.task != 'DEFEND') && target.type != 'VINE'
-  ) {
-    getEntityPositions(game, entity)
-      .forEach(pos => fillPheromone(game, pos, 'ALERT', entity.playerID));
-  }
-
-  // Trapjaw ants
-  if (
-    game.config[entity.playerID].trapjaw &&
-    entity.caste == 'MINIMA' &&
-    target.caste != 'MINIMA' &&
-    target.caste != 'SUB_MINIMA' &&
-    target.caste != 'TERMITE_WORKER'
-  ) {
-    addTrapjaw(game, target, entity);
-  }
-
-  // Queen can stun
-  if (entity.caste == 'QUEEN' && game.config[entity.playerID].queenStun) {
-    queueAction(game, target, makeAction(game, target, 'STUN'));
-  }
-
-  // attacked ants holding stuff put it down
-  if (target.holding != null) {
-    queueAction(game, target, makeAction(game, target, 'PUTDOWN'));
-  }
-};
 
 module.exports = {
   agentDecideAction,

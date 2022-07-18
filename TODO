@@ -3,6 +3,9 @@
 - - - - - - - ANTS - - - - - - -
   - ant behavior
     - fight/grapple
+      - damage never being dealt
+      - fix sprite ordering
+      - alert pheromone inconsistent (and probably shouldn't be rendered)
   - scenario:
     - touch and drag to add pheromone
       - level editor mode for not interfering with mouse
@@ -15,7 +18,7 @@
   - Add music from Antocracy
   - Dead ants
   - make base look like an ant hill
-  - favicon
+  - favicon + name
 
 
 - - - - - - RUNE INTEGRATION - - - - -
@@ -26,7 +29,7 @@
 
 - - - - - - - FIX - - - - - - - -
   - ants are trying to pick stuff up and failing repeatedly
-  - ants get in each other's way while carrying food
+  - ants will continuously turn around when very close to the colony
   - pheromoneWorker appears to not update after reset in level editor
 
 

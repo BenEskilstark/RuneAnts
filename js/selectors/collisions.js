@@ -34,6 +34,18 @@ const collisionsAtSpace = (
     .map(id => game.entities[id])
     .filter(e => {return e != null && e.id != entity.id})
     .filter(e => {
+      // ant colliding with ant is more complicated:
+      if (e.type == 'ANT' && entity.type == 'ANT' && blockingTypes.includes('ANT')) {
+        // blocked by enemy ants
+        if (e.playerID != entity.playerID) {
+          return true;
+        }
+
+        // not blocked if holding stuff
+        if (entity.holding != null && e.holding == null) { // || e.holding != null) {
+          return false;
+        }
+      }
       return blockingTypes.includes(e.type);
     });
   return collisions;

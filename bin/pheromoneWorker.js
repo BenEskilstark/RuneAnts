@@ -509,6 +509,10 @@ var config = {
     duration: 41 * 2,
     spriteOrder: [8]
   },
+  GRAPPLE: {
+    duration: 41 * 6,
+    spriteOrder: [5, 6, 7]
+  },
 
   // task-specific params
   WANDER: {
@@ -535,6 +539,12 @@ var config = {
     ALERT: 0,
     FOOD: 20,
     COLONY: 1000
+  },
+  DEFEND: {
+    base: 3,
+    forwardMovementBonus: 500,
+    prevPositionPenalty: -1000,
+    ALERT: 50
   },
   MOVE_DIRT: {
     base: 1,
@@ -2377,6 +2387,19 @@ var collisionsAtSpace = function collisionsAtSpace(game, entity, blockingTypes, 
   }).filter(function (e) {
     return e != null && e.id != entity.id;
   }).filter(function (e) {
+    // ant colliding with ant is more complicated:
+    if (e.type == 'ANT' && entity.type == 'ANT' && blockingTypes.includes('ANT')) {
+      // blocked by enemy ants
+      if (e.playerID != entity.playerID) {
+        return true;
+      }
+
+      // not blocked if holding stuff
+      if (entity.holding != null && e.holding == null) {
+        // || e.holding != null) {
+        return false;
+      }
+    }
     return blockingTypes.includes(e.type);
   });
   return collisions;

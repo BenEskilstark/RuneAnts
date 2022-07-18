@@ -5,6 +5,7 @@ const {
   dist, equals, magnitude, round,
 } = require('../utils/vectors');
 const {closeTo, thetaToDir, isDiagonalMove} = require('../utils/helpers');
+const {getEntityPositions} = require('../utils/gridHelpers');
 const {
   makeAction, isActionTypeQueued,
   queueAction, stackAction, cancelAction,
@@ -20,12 +21,14 @@ const {
   rotateEntity, changeEntityType, removeEntityFromGrid,
   addSegmentToEntity,
 } = require('../simulation/entityOperations');
+const {fillPheromone} = require('../simulation/pheromones');
 const {
   agentPutdown, agentPickup,
 } = require('../simulation/agentOperations');
 const {triggerExplosion} = require('../simulation/explosiveOperations');
 const {dealDamageToEntity} = require('../simulation/miscOperations');
 const {Entities} = require('../entities/registry');
+const {areNeighbors, getNeighborPositions} = require('../selectors/neighbors');
 
 
 const entityStartCurrentAction = (
@@ -63,6 +66,9 @@ const entityStartCurrentAction = (
       }
       break;
     }
+    case 'BITE':
+    case 'GRAPPLE':
+      entityFight(game, entity, curAction.payload);
     case 'TURN':
       rotateEntity(game, entity, curAction.payload);
       break;
@@ -224,6 +230,62 @@ const entityUnMan = (game: Game, entity: Entity, mannedEntity: Entity): void => 
   }
   if (game.focusedEntity != null && game.focusedEntity.id == mannedEntity.id) {
     game.focusedEntity = entity;
+  }
+};
+
+const entityFight = (game: Game, entity: Entity, target: ?Entity): void => {
+  if (!areNeighbors(game, entity, target)) return;
+  if (target.type.slice(0, 4) === 'DEAD') return;
+  if (target.position == null) return;
+
+  let isFacingAtAll = false;
+  getEntityPositions(game, target)
+    .forEach(pos => {
+      getPositionsInFront(game, entity).forEach(fp => {
+        if (equals(pos, fp)) {
+          isFacingAtAll = true;
+        }
+      })
+    });
+  if (!isFacingAtAll) {
+    let nextTheta = vectorTheta(subtract(entity.position, target.position));
+    getEntityPositions(game, target)
+      .forEach(pos => {
+        getNeighborPositions(game, entity).forEach(fp => {
+          if (equals(pos, fp)) {
+            nextTheta = vectorTheta(subtract(entity.position, fp));
+          }
+        })
+      });
+    // HACK: isFacing doesn't quite working for some diagonal directions,
+    // so if you're already facing the direction you should be, then just let
+    // the attack go through
+    if (!closeTo(entity.theta, nextTheta)) {
+      stackAction(game, entity, makeAction(game, entity, 'TURN', nextTheta));
+      entityStartCurrentAction(game, entity);
+      return;
+    }
+  }
+
+  let damage = entity.damage;
+  if (entity.actions.length > 0 && entity.actions[0].type == 'GRAPPLE') {
+    damage = 0.34;
+  }
+
+  dealDamageToEntity(game, target, damage);
+
+  // ALERT pheromone
+  if (
+    (entity.type == 'ANT' || entity.type == 'TERMITE') &&
+    (entity.timeOnTask < 700 || entity.task != 'DEFEND')
+  ) {
+    getEntityPositions(game, entity)
+      .forEach(pos => fillPheromone(game, pos, 'ALERT', entity.playerID));
+  }
+
+  // attacked ants holding stuff put it down
+  if (target.holding != null) {
+    queueAction(game, target, makeAction(game, target, 'PUTDOWN'));
   }
 };
 

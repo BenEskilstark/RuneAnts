@@ -509,6 +509,10 @@ var config = {
     duration: 41 * 2,
     spriteOrder: [8]
   },
+  GRAPPLE: {
+    duration: 41 * 6,
+    spriteOrder: [5, 6, 7]
+  },
 
   // task-specific params
   WANDER: {
@@ -535,6 +539,12 @@ var config = {
     ALERT: 0,
     FOOD: 20,
     COLONY: 1000
+  },
+  DEFEND: {
+    base: 3,
+    forwardMovementBonus: 500,
+    prevPositionPenalty: -1000,
+    ALERT: 50
   },
   MOVE_DIRT: {
     base: 1,
@@ -3973,6 +3983,19 @@ var collisionsAtSpace = function collisionsAtSpace(game, entity, blockingTypes, 
   }).filter(function (e) {
     return e != null && e.id != entity.id;
   }).filter(function (e) {
+    // ant colliding with ant is more complicated:
+    if (e.type == 'ANT' && entity.type == 'ANT' && blockingTypes.includes('ANT')) {
+      // blocked by enemy ants
+      if (e.playerID != entity.playerID) {
+        return true;
+      }
+
+      // not blocked if holding stuff
+      if (entity.holding != null && e.holding == null) {
+        // || e.holding != null) {
+        return false;
+      }
+    }
     return blockingTypes.includes(e.type);
   });
   return collisions;
@@ -5315,48 +5338,58 @@ var _require2 = require('../utils/helpers'),
     thetaToDir = _require2.thetaToDir,
     isDiagonalMove = _require2.isDiagonalMove;
 
-var _require3 = require('../simulation/actionQueue'),
-    makeAction = _require3.makeAction,
-    isActionTypeQueued = _require3.isActionTypeQueued,
-    queueAction = _require3.queueAction,
-    stackAction = _require3.stackAction,
-    cancelAction = _require3.cancelAction;
+var _require3 = require('../utils/gridHelpers'),
+    getEntityPositions = _require3.getEntityPositions;
 
-var _require4 = require('../selectors/sprites'),
-    getMaxFrameOffset = _require4.getMaxFrameOffset;
+var _require4 = require('../simulation/actionQueue'),
+    makeAction = _require4.makeAction,
+    isActionTypeQueued = _require4.isActionTypeQueued,
+    queueAction = _require4.queueAction,
+    stackAction = _require4.stackAction,
+    cancelAction = _require4.cancelAction;
 
-var _require5 = require('../selectors/misc'),
-    getPositionsInFront = _require5.getPositionsInFront,
-    getPositionsBehind = _require5.getPositionsBehind,
-    isFacing = _require5.isFacing,
-    canDoMove = _require5.canDoMove;
+var _require5 = require('../selectors/sprites'),
+    getMaxFrameOffset = _require5.getMaxFrameOffset;
 
-var _require6 = require('../selectors/collisions'),
-    collidesWith = _require6.collidesWith;
+var _require6 = require('../selectors/misc'),
+    getPositionsInFront = _require6.getPositionsInFront,
+    getPositionsBehind = _require6.getPositionsBehind,
+    isFacing = _require6.isFacing,
+    canDoMove = _require6.canDoMove;
 
-var _require7 = require('../simulation/entityOperations'),
-    addEntity = _require7.addEntity,
-    removeEntity = _require7.removeEntity,
-    moveEntity = _require7.moveEntity,
-    pickupEntity = _require7.pickupEntity,
-    putdownEntity = _require7.putdownEntity,
-    rotateEntity = _require7.rotateEntity,
-    changeEntityType = _require7.changeEntityType,
-    removeEntityFromGrid = _require7.removeEntityFromGrid,
-    addSegmentToEntity = _require7.addSegmentToEntity;
+var _require7 = require('../selectors/collisions'),
+    collidesWith = _require7.collidesWith;
 
-var _require8 = require('../simulation/agentOperations'),
-    agentPutdown = _require8.agentPutdown,
-    agentPickup = _require8.agentPickup;
+var _require8 = require('../simulation/entityOperations'),
+    addEntity = _require8.addEntity,
+    removeEntity = _require8.removeEntity,
+    moveEntity = _require8.moveEntity,
+    pickupEntity = _require8.pickupEntity,
+    putdownEntity = _require8.putdownEntity,
+    rotateEntity = _require8.rotateEntity,
+    changeEntityType = _require8.changeEntityType,
+    removeEntityFromGrid = _require8.removeEntityFromGrid,
+    addSegmentToEntity = _require8.addSegmentToEntity;
 
-var _require9 = require('../simulation/explosiveOperations'),
-    triggerExplosion = _require9.triggerExplosion;
+var _require9 = require('../simulation/pheromones'),
+    fillPheromone = _require9.fillPheromone;
 
-var _require10 = require('../simulation/miscOperations'),
-    dealDamageToEntity = _require10.dealDamageToEntity;
+var _require10 = require('../simulation/agentOperations'),
+    agentPutdown = _require10.agentPutdown,
+    agentPickup = _require10.agentPickup;
 
-var _require11 = require('../entities/registry'),
-    Entities = _require11.Entities;
+var _require11 = require('../simulation/explosiveOperations'),
+    triggerExplosion = _require11.triggerExplosion;
+
+var _require12 = require('../simulation/miscOperations'),
+    dealDamageToEntity = _require12.dealDamageToEntity;
+
+var _require13 = require('../entities/registry'),
+    Entities = _require13.Entities;
+
+var _require14 = require('../selectors/neighbors'),
+    areNeighbors = _require14.areNeighbors,
+    getNeighborPositions = _require14.getNeighborPositions;
 
 var entityStartCurrentAction = function entityStartCurrentAction(game, entity) {
   if (entity.actions.length == 0) return;
@@ -5399,6 +5432,9 @@ var entityStartCurrentAction = function entityStartCurrentAction(game, entity) {
         }
         break;
       }
+    case 'BITE':
+    case 'GRAPPLE':
+      entityFight(game, entity, curAction.payload);
     case 'TURN':
       rotateEntity(game, entity, curAction.payload);
       break;
@@ -5580,10 +5616,62 @@ var entityUnMan = function entityUnMan(game, entity, mannedEntity) {
   }
 };
 
+var entityFight = function entityFight(game, entity, target) {
+  if (!areNeighbors(game, entity, target)) return;
+  if (target.type.slice(0, 4) === 'DEAD') return;
+  if (target.position == null) return;
+
+  var isFacingAtAll = false;
+  getEntityPositions(game, target).forEach(function (pos) {
+    getPositionsInFront(game, entity).forEach(function (fp) {
+      if (equals(pos, fp)) {
+        isFacingAtAll = true;
+      }
+    });
+  });
+  if (!isFacingAtAll) {
+    var nextTheta = vectorTheta(subtract(entity.position, target.position));
+    getEntityPositions(game, target).forEach(function (pos) {
+      getNeighborPositions(game, entity).forEach(function (fp) {
+        if (equals(pos, fp)) {
+          nextTheta = vectorTheta(subtract(entity.position, fp));
+        }
+      });
+    });
+    // HACK: isFacing doesn't quite working for some diagonal directions,
+    // so if you're already facing the direction you should be, then just let
+    // the attack go through
+    if (!closeTo(entity.theta, nextTheta)) {
+      stackAction(game, entity, makeAction(game, entity, 'TURN', nextTheta));
+      entityStartCurrentAction(game, entity);
+      return;
+    }
+  }
+
+  var damage = entity.damage;
+  if (entity.actions.length > 0 && entity.actions[0].type == 'GRAPPLE') {
+    damage = 0.34;
+  }
+
+  dealDamageToEntity(game, target, damage);
+
+  // ALERT pheromone
+  if ((entity.type == 'ANT' || entity.type == 'TERMITE') && (entity.timeOnTask < 700 || entity.task != 'DEFEND')) {
+    getEntityPositions(game, entity).forEach(function (pos) {
+      return fillPheromone(game, pos, 'ALERT', entity.playerID);
+    });
+  }
+
+  // attacked ants holding stuff put it down
+  if (target.holding != null) {
+    queueAction(game, target, makeAction(game, target, 'PUTDOWN'));
+  }
+};
+
 module.exports = {
   entityStartCurrentAction: entityStartCurrentAction
 };
-},{"../entities/registry":11,"../selectors/collisions":35,"../selectors/misc":36,"../selectors/sprites":40,"../simulation/actionQueue":42,"../simulation/agentOperations":43,"../simulation/entityOperations":44,"../simulation/explosiveOperations":45,"../simulation/miscOperations":46,"../utils/helpers":90,"../utils/vectors":93}],42:[function(require,module,exports){
+},{"../entities/registry":11,"../selectors/collisions":35,"../selectors/misc":36,"../selectors/neighbors":38,"../selectors/sprites":40,"../simulation/actionQueue":42,"../simulation/agentOperations":43,"../simulation/entityOperations":44,"../simulation/explosiveOperations":45,"../simulation/miscOperations":46,"../simulation/pheromones":47,"../utils/gridHelpers":89,"../utils/helpers":90,"../utils/vectors":93}],42:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -6201,6 +6289,36 @@ var agentDecideAction = function agentDecideAction(game, agent) {
 
 var antDecideAction = function antDecideAction(game, ant) {
   // FIGHT
+  if (ant.holding == null) {
+    var targets = getNeighborEntities(game, ant, true).filter(function (e) {
+      if (e.position == null) return false;
+      if (isDiagonalMove(ant.position, e.position) && e.type == 'ANT') return false;
+      return (
+        // (game.config.critterTypes.includes(e.type)) ||
+        e.type == 'ANT' && e.playerID != ant.playerID
+      );
+    });
+
+    if (targets.length > 0) {
+      // always prefer to grapple if possible
+      var filteredTargets = targets.filter(function (t) {
+        return t.type == 'ANT';
+        // if (ant.caste != 'MINIMA') return true;
+        // return t.caste == 'MINIMA';
+      });
+      var target = filteredTargets.length > 0 ? oneOf(filteredTargets) : oneOf(targets);
+      var actionType = 'BITE';
+      if (ant.type == 'ANT' && target.type == 'ANT'
+      // (target.caste == 'MINIMA' && ant.caste == 'MINIMA')
+      // || (target.caste == 'TERMITE_WORKER' && ant.caste == 'MINIMA')
+      // || (target.caste == 'MEDIA' && ant.caste == 'MEDIA')
+      ) {
+          actionType = 'GRAPPLE';
+        }
+      queueAction(game, ant, makeAction(game, ant, actionType, target));
+      return;
+    }
+  }
 
   // PICK UP FOOD
   var neighboringFood = getNeighborPositions(game, ant, true /* external */).map(function (pos) {
@@ -6216,457 +6334,11 @@ var antDecideAction = function antDecideAction(game, ant) {
     var pickup = oneOf(neighboringFood);
     var position = pickup.position;
     queueAction(game, ant, makeAction(game, ant, 'PICKUP', { pickup: pickup, position: position }));
+    return;
   }
 
   // MOVE
   agentDecideMove(game, ant);
-};
-
-var exampleAntDecideAction = function exampleAntDecideAction(game, ant) {
-  var config = getEntityConfig(game, ant);
-
-  // trapjawing ants don't do anything
-  if (ant.position == null) return;
-
-  // allow queen to feed
-  if (ant.holding != null) {
-    // FEED
-    var neighboringLarva = getNeighborPositions(game, ant, true /* external */).map(function (pos) {
-      return lookupInGrid(game.grid, pos).filter(function (id) {
-        return game.entities[id].type == 'LARVA';
-      })[0];
-    }).filter(function (id) {
-      return id != null;
-    }).map(function (id) {
-      return game.entities[id];
-    }).filter(function (l) {
-      return l.foodNeed > 0;
-    });
-    if (ant.holding.type == 'FOOD' && neighboringLarva.length > 0) {
-      queueAction(game, ant, makeAction(game, ant, 'FEED'));
-      return;
-    }
-  }
-
-  // don't do anything else if this ant is the player's queen
-  if (ant.caste == 'QUEEN' && game.players[ant.playerID].type == 'HUMAN' && !ant.autopilot) {
-    var token = game.TOKEN.map(function (id) {
-      return game.entities[id];
-    }).filter(function (t) {
-      return t.pheromoneType == 'QUEEN_FOLLOW' && t.playerID == game.playerID;
-    })[0];
-    // queen moves "automatically" if the token exists, ie uses this function
-    if (token != null) {
-      antDecideMove(game, ant);
-    }
-    return;
-  }
-
-  // if this is a honeypot ant, the affix to dirt or stone
-  // AND if affixed, then lay food every once in a while
-  if (ant.caste == 'HONEY_POT') {
-    if (!ant.affixed) {
-      // see if you should affix
-      if (canLayFood(game, ant)) {
-        var positions = getPositionsInFront(game, ant);
-        var _iteratorNormalCompletion2 = true;
-        var _didIteratorError2 = false;
-        var _iteratorError2 = undefined;
-
-        try {
-          for (var _iterator2 = positions[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-            var pos = _step2.value;
-
-            var occupied = lookupInGrid(game.grid, pos).filter(function (id) {
-              return ant.id != id;
-            }).map(function (id) {
-              return game.entities[id];
-            }).filter(function (e) {
-              return e.type == 'DIRT' || e.type == 'STONE';
-            }).length > 0;
-            var inGrid = insideGrid(game.grid, pos);
-            if (occupied && inGrid && thetaToDir(ant.theta, true) != null) {
-              ant.affixed = true;
-              return; // affixed honeypots don't move
-            }
-          }
-        } catch (err) {
-          _didIteratorError2 = true;
-          _iteratorError2 = err;
-        } finally {
-          try {
-            if (!_iteratorNormalCompletion2 && _iterator2.return) {
-              _iterator2.return();
-            }
-          } finally {
-            if (_didIteratorError2) {
-              throw _iteratorError2;
-            }
-          }
-        }
-      }
-    } else {
-      // laying food
-      if (ant.foodLayingCooldown < 0) {
-        ant.foodLayingCooldown = config.foodLayingCooldown;
-
-        var _positions = getPositionsBehind(game, ant);
-        var _iteratorNormalCompletion3 = true;
-        var _didIteratorError3 = false;
-        var _iteratorError3 = undefined;
-
-        try {
-          for (var _iterator3 = _positions[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-            var _pos = _step3.value;
-
-            var _occupied = lookupInGrid(game.grid, _pos).filter(function (id) {
-              return ant.id != id;
-            }).length > 0;
-            var _inGrid = insideGrid(game.grid, _pos);
-            if (!_occupied && _inGrid && thetaToDir(ant.theta, true) != null) {
-              addEntity(game, makeFood(game, _pos));
-            }
-          }
-        } catch (err) {
-          _didIteratorError3 = true;
-          _iteratorError3 = err;
-        } finally {
-          try {
-            if (!_iteratorNormalCompletion3 && _iterator3.return) {
-              _iterator3.return();
-            }
-          } finally {
-            if (_didIteratorError3) {
-              throw _iteratorError3;
-            }
-          }
-        }
-      } else {
-        ant.foodLayingCooldown -= game.timeSinceLastTick;
-      }
-      return; // affixed honeypots don't move
-    }
-  }
-
-  // FIGHT
-  if (ant.holding == null &&
-  // getPheromoneAtPosition(game, ant.position, 'PATROL_DEFEND_PHER', ant.playerID) == 0 &&
-  // ^^ handle only based on task, not pheromone
-  config.damage > 0) {
-    var domPher = getPheromoneAtPosition(game, ant.position, 'DOMESTICATE', ant.playerID) > 0;
-    var rallyPher = getPheromoneAtPosition(game, ant.position, 'PATROL_DEFEND_PHER', ant.playerID) > 0;
-    var targets = getNeighborEntities(game, ant, true).filter(function (e) {
-      if (e.position == null) return false;
-      if (isDiagonalMove(ant.position, e.position) && e.type == 'ANT' && e.caste == 'MINIMA') return false;
-      return game.config.critterTypes.includes(e.type) && !domPher || e.type == 'ANT' && e.playerID != ant.playerID || e.type == 'TERMITE' && e.playerID != ant.playerID ||
-      // (e.type == 'FOOT' && e.state == 'stomping') ||
-      // ants alerted by the queen will attack anything with hp
-      e.playerID != ant.playerID && e.hp > 0 && e.type != 'FOOT' && getPheromoneAtPosition(game, ant.position, 'QUEEN_ALERT', ant.playerID) > 0 && ant.task == 'DEFEND';
-    });
-
-    if (targets.length > 0 && ant.task != 'PATROL_DEFEND' && !rallyPher) {
-      // always prefer to grapple if possible
-      var filteredTargets = targets.filter(function (t) {
-        if (ant.caste != 'MINIMA') return true;
-        return t.caste == 'MINIMA';
-      });
-      var shouldFight = true;
-      var target = filteredTargets.length > 0 ? oneOf(filteredTargets) : oneOf(targets);
-      var actionType = 'BITE';
-      if (target.caste == 'MINIMA' && ant.caste == 'MINIMA' || target.caste == 'TERMITE_WORKER' && ant.caste == 'MINIMA'
-      // || (target.caste == 'MEDIA' && ant.caste == 'MEDIA')
-      ) {
-          // special case for queen with break up grapple ability
-          if (getPheromoneAtPosition(game, ant.position, 'QUEEN_DISPERSE', ant.playerID) > 0 || getPheromoneAtPosition(game, ant.position, 'QUEEN_DISPERSE', target.playerID) > 0) {
-            if (ant.playerID == game.playerID && game.config[playerID].queenBreaksUpGrapple) {
-              actionType = 'BITE';
-            } else {
-              shouldFight = false;
-            }
-          } else {
-            actionType = 'GRAPPLE';
-          }
-        }
-      if (shouldFight) {
-        // special case for CPU queens w/whirlwind or dash ability
-        if (ant.caste == 'QUEEN' && game.config[ant.playerID].queenAbilities.includes('JUMP') && Math.random() < 0.2) {
-          actionType = 'DASH';
-          target = { nextPos: _extends({}, target.position) };
-        }
-        if (ant.caste == 'QUEEN' && game.config[ant.playerID].queenAbilities.includes('WHIRLWIND') && Math.random() < 0.2) {
-          actionType = 'WHIRLWIND';
-        }
-        queueAction(game, ant, makeAction(game, ant, actionType, target));
-        return;
-      }
-    }
-  }
-
-  // PICKUP
-  if (ant.holdingIDs.length < config.maxHold) {
-    // cpu queen
-    if (ant.caste == 'QUEEN') {
-      antDecideMove(game, ant);
-      return;
-    }
-
-    antPickupNeighbor(game, ant);
-
-    // EXAMINE
-    if (ant.caste == 'MINIMA' && ant.actions.length == 0 && ant.task == 'WANDER' && getPheromoneAtPosition(game, ant.position, 'QUEEN_PHER', ant.playerID) == 0) {
-      var posRight = round(add(ant.position, makeVector(ant.theta - Math.PI / 2, 1)));
-      var examiningRight = false;
-      if (insideGrid(game.grid, posRight)) {
-        var rightOccupied = lookupInGrid(game.grid, posRight).map(function (id) {
-          return game.entities[id];
-        }).filter(function (e) {
-          return getEntityConfig(game, ant).blockingTypes.includes(e.type);
-        }).length > 0;
-        if (rightOccupied && Math.random() < 0.33) {
-          queueAction(game, ant, makeAction(game, ant, 'EXAMINE', 'right'));
-          examiningRight = true;
-        }
-      }
-
-      var posLeft = round(add(ant.position, makeVector(ant.theta + Math.PI / 2, 1)));
-      if (insideGrid(posLeft)) {
-        var leftOccupied = lookupInGrid(game.grid, posLeft).map(function (id) {
-          return game.entities[id];
-        }).filter(function (e) {
-          return getEntityConfig(game, ant).blockingTypes.includes(e.type);
-        }).length > 0;
-        if (!examiningRight && leftOccupied && Math.random() < 0.33) {
-          queueAction(game, ant, makeAction(game, ant, 'EXAMINE', 'left'));
-        }
-      }
-    }
-  }
-
-  // PUTDOWN
-  var holdingFood = ant.holding != null && ant.holding.type == 'FOOD';
-  var holdingDirt = ant.holding != null && ant.holding.type == 'DIRT';
-  var holdingEgg = ant.holding != null && ant.holding.type == 'EGG';
-  var holdingLarva = ant.holding != null && ant.holding.type == 'LARVA';
-  var holdingPupa = ant.holding != null && ant.holding.type == 'PUPA';
-
-  if (ant.holding != null) {
-    var possiblePutdownPositions = getNeighborPositions(game, ant, true /*external*/);
-    var _iteratorNormalCompletion4 = true;
-    var _didIteratorError4 = false;
-    var _iteratorError4 = undefined;
-
-    try {
-      for (var _iterator4 = possiblePutdownPositions[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-        var putdownPos = _step4.value;
-
-        var putdownLoc = { position: putdownPos, playerID: ant.playerID };
-        var _occupied2 = lookupInGrid(game.grid, putdownPos).map(function (id) {
-          return game.entities[id];
-        }).filter(function (e) {
-          return e.type.slice(0, 4) != 'DEAD' && e.type != 'BACKGROUND' && e.type != 'SPIDER_WEB' && e.type != 'ANT';
-        }).length > 0;
-        var nextTheta = vectorTheta(subtract(ant.position, putdownPos));
-
-        // if Returning and near colony token, put down
-        var fQ = game.config[ant.playerID].COLONY.quantity;
-        if (ant.task == 'RETURN' && (inTokenRadius(game, putdownLoc, 'COLONY') || getPheromoneAtPosition(game, putdownLoc.position, 'COLONY', ant.playerID) == fQ) && !_occupied2) {
-          if (!isFacing(ant, putdownPos)) {
-            queueAction(game, ant, makeAction(game, ant, 'TURN', nextTheta));
-          }
-          queueAction(game, ant, makeAction(game, ant, 'PUTDOWN', { position: putdownPos }));
-          return;
-        }
-        // if holding dirt and near putdown token, put it down
-        if ((holdingDirt || ant.task == 'MOVE_DIRT') && (inTokenRadius(game, putdownLoc, 'DIRT_DROP') || getPheromoneAtPosition(game, putdownPos, 'DIRT_DROP', ant.playerID) == game.config[ant.playerID]['DIRT_DROP'].quantity) && !_occupied2) {
-          if (!isFacing(ant, putdownPos)) {
-            queueAction(game, ant, makeAction(game, ant, 'TURN', nextTheta));
-          }
-          queueAction(game, ant, makeAction(game, ant, 'PUTDOWN', { position: putdownPos }));
-          return;
-        }
-        // if holding egg and near putdown token, put it down
-        if ((holdingEgg || ant.task == 'MOVE_EGG') && inTokenRadius(game, putdownLoc, 'EGG') && !_occupied2) {
-          if (!isFacing(ant, putdownPos)) {
-            queueAction(game, ant, makeAction(game, ant, 'TURN', nextTheta));
-          }
-          queueAction(game, ant, makeAction(game, ant, 'PUTDOWN', { position: putdownPos }));
-          return;
-        }
-        // if holding larva and near putdown token, put it down
-        if ((holdingLarva || ant.task == 'MOVE_LARVA') && inTokenRadius(game, putdownLoc, 'MOVE_LARVA_PHER') && !_occupied2) {
-          if (!isFacing(ant, putdownPos)) {
-            queueAction(game, ant, makeAction(game, ant, 'TURN', nextTheta));
-          }
-          queueAction(game, ant, makeAction(game, ant, 'PUTDOWN', { position: putdownPos }));
-          return;
-        }
-        // if holding pupa and near putdown token, put it down
-        if ((holdingPupa || ant.task == 'MOVE_PUPA') && inTokenRadius(game, putdownLoc, 'PUPA') && !_occupied2) {
-          if (!isFacing(ant, putdownPos)) {
-            queueAction(game, ant, makeAction(game, ant, 'TURN', nextTheta));
-          }
-          queueAction(game, ant, makeAction(game, ant, 'PUTDOWN', { position: putdownPos }));
-          return;
-        }
-      }
-    } catch (err) {
-      _didIteratorError4 = true;
-      _iteratorError4 = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion4 && _iterator4.return) {
-          _iterator4.return();
-        }
-      } finally {
-        if (_didIteratorError4) {
-          throw _iteratorError4;
-        }
-      }
-    }
-  }
-
-  // MOVE
-  antDecideMove(game, ant);
-};
-
-var entityFight = function entityFight(game, entity, target) {
-  if (!areNeighbors(game, entity, target)) return;
-  if (target.type.slice(0, 4) === 'DEAD') return;
-  if (target.position == null) return;
-
-  var isFacingAtAll = false;
-  getEntityPositions(game, target).forEach(function (pos) {
-    getPositionsInFront(game, entity).forEach(function (fp) {
-      if (equals(pos, fp)) {
-        isFacingAtAll = true;
-      }
-    });
-  });
-  if (!isFacingAtAll) {
-    var nextTheta = vectorTheta(subtract(entity.position, target.position));
-    getEntityPositions(game, target).forEach(function (pos) {
-      getNeighborPositions(game, entity).forEach(function (fp) {
-        if (equals(pos, fp)) {
-          nextTheta = vectorTheta(subtract(entity.position, fp));
-        }
-      });
-    });
-    // HACK: isFacing doesn't quite working for some diagonal directions,
-    // so if you're already facing the direction you should be, then just let
-    // the attack go through
-    if (!closeTo(entity.theta, nextTheta)) {
-      stackAction(game, entity, makeAction(game, entity, 'TURN', nextTheta));
-      critterStartCurrentAction(game, entity);
-      return;
-    }
-  }
-
-  var damage = entity.damage;
-  if (entity.actions.length > 0 && entity.actions[0].type == 'GRAPPLE') {
-    damage = 0.34;
-  }
-  // armored queen takes half damage from the front
-  if (target.caste == 'QUEEN' && game.config[target.playerID].queenArmored) {
-    var inFront = false;
-    var posInFront = getPositionsInFront(game, target);
-    var _iteratorNormalCompletion5 = true;
-    var _didIteratorError5 = false;
-    var _iteratorError5 = undefined;
-
-    try {
-      for (var _iterator5 = getEntityPositions(game, entity)[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-        var p = _step5.value;
-        var _iteratorNormalCompletion6 = true;
-        var _didIteratorError6 = false;
-        var _iteratorError6 = undefined;
-
-        try {
-          for (var _iterator6 = posInFront[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-            var i = _step6.value;
-
-            if (equals(p, i)) {
-              inFront = true;
-            }
-          }
-        } catch (err) {
-          _didIteratorError6 = true;
-          _iteratorError6 = err;
-        } finally {
-          try {
-            if (!_iteratorNormalCompletion6 && _iterator6.return) {
-              _iterator6.return();
-            }
-          } finally {
-            if (_didIteratorError6) {
-              throw _iteratorError6;
-            }
-          }
-        }
-      }
-    } catch (err) {
-      _didIteratorError5 = true;
-      _iteratorError5 = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion5 && _iterator5.return) {
-          _iterator5.return();
-        }
-      } finally {
-        if (_didIteratorError5) {
-          throw _iteratorError5;
-        }
-      }
-    }
-
-    if (inFront) {
-      damage /= 2;
-    }
-  }
-
-  // dash deals double damage
-  if (entity.prevActionType == 'DASH') {
-    damage *= 4;
-  }
-
-  dealDamageToEntity(game, target, damage);
-
-  // Spiked larva
-  if (target.hp <= 0 && target.type == 'LARVA' && game.config[target.playerID].spikedLarva) {
-    dealDamageToEntity(game, entity, game.config[target.playerID].spikedLarva);
-  }
-
-  // Centipedes grow when they kill things
-  if (entity.type == 'CENTIPEDE' && target.hp <= 0) {
-    var lastSegmentPos = entity.segments[entity.segments.length - 1];
-    addSegmentToEntity(game, entity, add(lastSegmentPos, Math.random() < 0.5 ? { x: 1, y: 0 } : { x: 0, y: 1 }));
-  }
-
-  // Roly Polies roll up when attacked
-  if (target.type == 'ROLY_POLY') {
-    target.rolled = true;
-  }
-
-  // ALERT pheromone
-  if ((entity.type == 'ANT' || entity.type == 'TERMITE') && (entity.timeOnTask < 700 || entity.task != 'DEFEND') && target.type != 'VINE') {
-    getEntityPositions(game, entity).forEach(function (pos) {
-      return fillPheromone(game, pos, 'ALERT', entity.playerID);
-    });
-  }
-
-  // Trapjaw ants
-  if (game.config[entity.playerID].trapjaw && entity.caste == 'MINIMA' && target.caste != 'MINIMA' && target.caste != 'SUB_MINIMA' && target.caste != 'TERMITE_WORKER') {
-    addTrapjaw(game, target, entity);
-  }
-
-  // Queen can stun
-  if (entity.caste == 'QUEEN' && game.config[entity.playerID].queenStun) {
-    queueAction(game, target, makeAction(game, target, 'STUN'));
-  }
-
-  // attacked ants holding stuff put it down
-  if (target.holding != null) {
-    queueAction(game, target, makeAction(game, target, 'PUTDOWN'));
-  }
 };
 
 module.exports = {

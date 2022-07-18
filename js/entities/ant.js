@@ -66,6 +66,10 @@ const config = {
     duration: 41 * 2,
     spriteOrder: [8],
   },
+  GRAPPLE: {
+    duration: 41 * 6,
+    spriteOrder: [5, 6, 7],
+  },
 
   // task-specific params
   WANDER: {
@@ -92,6 +96,12 @@ const config = {
     ALERT: 0,
     FOOD: 20,
     COLONY: 1000,
+  },
+  DEFEND: {
+    base: 3,
+    forwardMovementBonus: 500,
+    prevPositionPenalty: -1000,
+    ALERT: 50,
   },
   MOVE_DIRT: {
     base: 1,
