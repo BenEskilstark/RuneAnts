@@ -78,7 +78,7 @@ const config = {
     prevPositionPenalty: -100,
     ALERT: 500,
     FOOD: 100,
-    FOLLOW: 10,
+    FOLLOW: 100,
     COLONY: -1,
   },
   RETRIEVE: {

@@ -2,13 +2,17 @@
 
 - - - - - - - ANTS - - - - - - -
   - ant behavior
+    - follow pheromones more readily
+    - food retrieval
+      - constantly turning back on themselves when returning with food
+      - not following food pheromone readily
     - fight/grapple
       - damage never being dealt
       - fix sprite ordering
       - alert pheromone inconsistent (and probably shouldn't be rendered)
   - scenario:
     - touch and drag to add pheromone
-      - level editor mode for not interfering with mouse
+      - allow switching between level editor modes and mouse mode
     - food spawn system
 
 

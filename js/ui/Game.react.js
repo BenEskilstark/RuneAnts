@@ -7,7 +7,8 @@ const Checkbox = require('./Components/Checkbox.react');
 const RadioPicker = require('./Components/RadioPicker.react');
 const TopBar = require('./TopBar.react');
 const BottomBar = require('./BottomBar.react');
-const {config} = require('../config');
+const {config, pheromones} = require('../config');
+const {fillPheromone} = require('../simulation/pheromones');
 const {initMouseControlsSystem} = require('../systems/mouseControlsSystem');
 const {initGameOverSystem} = require('../systems/gameOverSystem');
 const {initSpriteSheetSystem} = require('../systems/spriteSheetSystem');
@@ -62,14 +63,8 @@ function Game(props: Props): React.Node {
     initGameOverSystem(store);
     initPheromoneWorkerSystem(store);
     registerHotkeys(dispatch);
+    initMouseControlsSystem(store, configureMouseHandlers(state.game));
   }, [gameID]);
-
-  useEffect(() => {
-    if (state.game.mouseMode != 'NONE') {
-      initMouseControlsSystem(store, configureMouseHandlers(state.game));
-    }
-  }, [state.game.mouseMode]);
-
 
   // ---------------------------------------------
   // memoizing UI stuff here
@@ -217,38 +212,14 @@ function registerHotkeys(dispatch) {
 function configureMouseHandlers(game) {
   const handlers = {
     mouseMove: (state, dispatch, gridPos) => {
-      const dim = inLine(gridPos, state.game.mouse.prevPos);
-      if (dim) {
-        let firstCollectedSucceeded = false;
-        for (let i = 1; i <= dim.dist; i++) {
-          const pos = {...state.game.mouse.prevPos};
-          pos[dim.dim] += (i * dim.mult)
-          if (state.game.mouse.isLeftDown) {
-            const success = handleCollect(
-              state, dispatch,
-              pos, false,
-              i > 1 && firstCollectedSucceeded, /* ignore colony */
-            );
-            if (success && i == 1) {
-              firstCollectedSucceeded = true;
-            }
-          } else if (state.game.mouse.isRightDown) {
-            handlePlace(state, dispatch, pos);
-          }
-        }
-      } else {
-        if (state.game.mouse.isLeftDown) {
-          handleCollect(state, dispatch, gridPos);
-        } else if (state.game.mouse.isRightDown) {
-          handlePlace(state, dispatch, gridPos);
-        }
+      if (state.game.mouse.isLeftDown) {
+        dispatch({type: 'FILL_PHEROMONE',
+          gridPos,
+          pheromoneType: 'FOLLOW',
+          playerID: state.game.playerID,
+          quantity: pheromones.FOLLOW.quantity,
+        });
       }
-    },
-    leftDown: (state, dispatch, gridPos) => {
-      handleCollect(state, dispatch, gridPos, true /* ignore prevPos */);
-    },
-    rightDown: (state, dispatch, gridPos) => {
-      handlePlace(state, dispatch, gridPos, true /* ignore prevPos */);
     },
     scroll: (state, dispatch, zoom) => {
       dispatch({type: 'INCREMENT_ZOOM', zoom});

@@ -46,7 +46,7 @@ function LevelEditor(props: Props): React.Node {
     gridWidth: game.gridHeight,
     gridHeight: game.gridWidth,
     playerID: 0,
-    paletteMode: 'CREATE ENTITIES',
+    paletteMode: 'NONE',
 
     // entity creation mode
     deleteMode: false,
@@ -122,6 +122,8 @@ function LevelEditor(props: Props): React.Node {
     } else if (editor.paletteMode == 'MARQUEE') {
       shouldInit = false;
       dispatch({type: 'SET_MOUSE_MODE', mouseMode: 'COLLECT'});
+    } else {
+      shouldInit = false;
     }
     if (shouldInit) {
       initMouseControlsSystem(store, handlers);
@@ -231,7 +233,7 @@ function LevelEditor(props: Props): React.Node {
     <Divider />
     <div>
       <Dropdown
-        options={['CREATE ENTITIES', 'PHEROMONES', 'COPY-PASTE', 'MARQUEE']}
+        options={['CREATE ENTITIES', 'PHEROMONES', 'COPY-PASTE', 'MARQUEE', 'NONE']}
         selected={editor.paletteMode}
         onChange={(paletteMode) => {
           setEditor({...editor, paletteMode});

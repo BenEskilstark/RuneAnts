@@ -521,7 +521,7 @@ var config = {
     prevPositionPenalty: -100,
     ALERT: 500,
     FOOD: 100,
-    FOLLOW: 10,
+    FOLLOW: 100,
     COLONY: -1
   },
   RETRIEVE: {
@@ -9815,8 +9815,6 @@ module.exports = ExperimentalSidebar;
 },{"./Components/Button.react":62,"./Components/Checkbox.react":63,"./Components/Divider.react":64,"./Components/Dropdown.react":65,"./Components/Slider.react":70,"react":131}],72:[function(require,module,exports){
 'use strict';
 
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
 var React = require('react');
 var Button = require('./Components/Button.react');
 var Canvas = require('./Canvas.react');
@@ -9826,34 +9824,38 @@ var TopBar = require('./TopBar.react');
 var BottomBar = require('./BottomBar.react');
 
 var _require = require('../config'),
-    config = _require.config;
+    config = _require.config,
+    pheromones = _require.pheromones;
 
-var _require2 = require('../systems/mouseControlsSystem'),
-    initMouseControlsSystem = _require2.initMouseControlsSystem;
+var _require2 = require('../simulation/pheromones'),
+    fillPheromone = _require2.fillPheromone;
 
-var _require3 = require('../systems/gameOverSystem'),
-    initGameOverSystem = _require3.initGameOverSystem;
+var _require3 = require('../systems/mouseControlsSystem'),
+    initMouseControlsSystem = _require3.initMouseControlsSystem;
 
-var _require4 = require('../systems/spriteSheetSystem'),
-    initSpriteSheetSystem = _require4.initSpriteSheetSystem;
+var _require4 = require('../systems/gameOverSystem'),
+    initGameOverSystem = _require4.initGameOverSystem;
 
-var _require5 = require('../systems/rainSystem'),
-    initRainSystem = _require5.initRainSystem;
+var _require5 = require('../systems/spriteSheetSystem'),
+    initSpriteSheetSystem = _require5.initSpriteSheetSystem;
 
-var _require6 = require('../systems/missileAttackSystem'),
-    initMissileAttackSystem = _require6.initMissileAttackSystem;
+var _require6 = require('../systems/rainSystem'),
+    initRainSystem = _require6.initRainSystem;
 
-var _require7 = require('../systems/pheromoneWorkerSystem'),
-    initPheromoneWorkerSystem = _require7.initPheromoneWorkerSystem;
+var _require7 = require('../systems/missileAttackSystem'),
+    initMissileAttackSystem = _require7.initMissileAttackSystem;
 
-var _require8 = require('../systems/keyboardControlsSystem'),
-    initKeyboardControlsSystem = _require8.initKeyboardControlsSystem;
+var _require8 = require('../systems/pheromoneWorkerSystem'),
+    initPheromoneWorkerSystem = _require8.initPheromoneWorkerSystem;
+
+var _require9 = require('../systems/keyboardControlsSystem'),
+    initKeyboardControlsSystem = _require9.initKeyboardControlsSystem;
 
 var ExperimentalSidebar = require('./ExperimentalSidebar.react');
 
-var _require9 = require('../thunks/mouseInteractions'),
-    handleCollect = _require9.handleCollect,
-    handlePlace = _require9.handlePlace;
+var _require10 = require('../thunks/mouseInteractions'),
+    handleCollect = _require10.handleCollect,
+    handlePlace = _require10.handlePlace;
 
 var useEffect = React.useEffect,
     useState = React.useState,
@@ -9861,26 +9863,26 @@ var useEffect = React.useEffect,
     Component = React.Component,
     memo = React.memo;
 
-var _require10 = require('../utils/vectors'),
-    add = _require10.add,
-    subtract = _require10.subtract;
+var _require11 = require('../utils/vectors'),
+    add = _require11.add,
+    subtract = _require11.subtract;
 
-var _require11 = require('../utils/gridHelpers'),
-    lookupInGrid = _require11.lookupInGrid;
+var _require12 = require('../utils/gridHelpers'),
+    lookupInGrid = _require12.lookupInGrid;
 
-var _require12 = require('../utils/helpers'),
-    clamp = _require12.clamp,
-    isMobile = _require12.isMobile;
+var _require13 = require('../utils/helpers'),
+    clamp = _require13.clamp,
+    isMobile = _require13.isMobile;
 
-var _require13 = require('../selectors/misc'),
-    getControlledEntityInteraction = _require13.getControlledEntityInteraction,
-    getManningAction = _require13.getManningAction;
+var _require14 = require('../selectors/misc'),
+    getControlledEntityInteraction = _require14.getControlledEntityInteraction,
+    getManningAction = _require14.getManningAction;
 
-var _require14 = require('../simulation/actionQueue'),
-    isActionTypeQueued = _require14.isActionTypeQueued;
+var _require15 = require('../simulation/actionQueue'),
+    isActionTypeQueued = _require15.isActionTypeQueued;
 
-var _require15 = require('../render/render'),
-    render = _require15.render;
+var _require16 = require('../render/render'),
+    render = _require16.render;
 
 function Game(props) {
   var dispatch = props.dispatch,
@@ -9909,13 +9911,8 @@ function Game(props) {
     initGameOverSystem(store);
     initPheromoneWorkerSystem(store);
     registerHotkeys(dispatch);
+    initMouseControlsSystem(store, configureMouseHandlers(state.game));
   }, [gameID]);
-
-  useEffect(function () {
-    if (state.game.mouseMode != 'NONE') {
-      initMouseControlsSystem(store, configureMouseHandlers(state.game));
-    }
-  }, [state.game.mouseMode]);
 
   // ---------------------------------------------
   // memoizing UI stuff here
@@ -10059,35 +10056,14 @@ function registerHotkeys(dispatch) {
 function configureMouseHandlers(game) {
   var handlers = {
     mouseMove: function mouseMove(state, dispatch, gridPos) {
-      var dim = inLine(gridPos, state.game.mouse.prevPos);
-      if (dim) {
-        var firstCollectedSucceeded = false;
-        for (var i = 1; i <= dim.dist; i++) {
-          var pos = _extends({}, state.game.mouse.prevPos);
-          pos[dim.dim] += i * dim.mult;
-          if (state.game.mouse.isLeftDown) {
-            var success = handleCollect(state, dispatch, pos, false, i > 1 && firstCollectedSucceeded /* ignore colony */
-            );
-            if (success && i == 1) {
-              firstCollectedSucceeded = true;
-            }
-          } else if (state.game.mouse.isRightDown) {
-            handlePlace(state, dispatch, pos);
-          }
-        }
-      } else {
-        if (state.game.mouse.isLeftDown) {
-          handleCollect(state, dispatch, gridPos);
-        } else if (state.game.mouse.isRightDown) {
-          handlePlace(state, dispatch, gridPos);
-        }
+      if (state.game.mouse.isLeftDown) {
+        dispatch({ type: 'FILL_PHEROMONE',
+          gridPos: gridPos,
+          pheromoneType: 'FOLLOW',
+          playerID: state.game.playerID,
+          quantity: pheromones.FOLLOW.quantity
+        });
       }
-    },
-    leftDown: function leftDown(state, dispatch, gridPos) {
-      handleCollect(state, dispatch, gridPos, true /* ignore prevPos */);
-    },
-    rightDown: function rightDown(state, dispatch, gridPos) {
-      handlePlace(state, dispatch, gridPos, true /* ignore prevPos */);
     },
     scroll: function scroll(state, dispatch, zoom) {
       dispatch({ type: 'INCREMENT_ZOOM', zoom: zoom });
@@ -10163,7 +10139,7 @@ function MiniTicker(props) {
 }
 
 module.exports = Game;
-},{"../config":1,"../render/render":30,"../selectors/misc":36,"../simulation/actionQueue":42,"../systems/gameOverSystem":50,"../systems/keyboardControlsSystem":51,"../systems/missileAttackSystem":52,"../systems/mouseControlsSystem":53,"../systems/pheromoneWorkerSystem":54,"../systems/rainSystem":55,"../systems/spriteSheetSystem":56,"../thunks/mouseInteractions":58,"../utils/gridHelpers":89,"../utils/helpers":90,"../utils/vectors":93,"./BottomBar.react":59,"./Canvas.react":60,"./Components/Button.react":62,"./Components/Checkbox.react":63,"./Components/RadioPicker.react":69,"./ExperimentalSidebar.react":71,"./TopBar.react":78,"react":131}],73:[function(require,module,exports){
+},{"../config":1,"../render/render":30,"../selectors/misc":36,"../simulation/actionQueue":42,"../simulation/pheromones":47,"../systems/gameOverSystem":50,"../systems/keyboardControlsSystem":51,"../systems/missileAttackSystem":52,"../systems/mouseControlsSystem":53,"../systems/pheromoneWorkerSystem":54,"../systems/rainSystem":55,"../systems/spriteSheetSystem":56,"../thunks/mouseInteractions":58,"../utils/gridHelpers":89,"../utils/helpers":90,"../utils/vectors":93,"./BottomBar.react":59,"./Canvas.react":60,"./Components/Button.react":62,"./Components/Checkbox.react":63,"./Components/RadioPicker.react":69,"./ExperimentalSidebar.react":71,"./TopBar.react":78,"react":131}],73:[function(require,module,exports){
 'use strict';
 
 var React = require('react');
@@ -10521,7 +10497,7 @@ function LevelEditor(props) {
     gridWidth: game.gridHeight,
     gridHeight: game.gridWidth,
     playerID: 0,
-    paletteMode: 'CREATE ENTITIES',
+    paletteMode: 'NONE',
 
     // entity creation mode
     deleteMode: false,
@@ -10600,6 +10576,8 @@ function LevelEditor(props) {
     } else if (editor.paletteMode == 'MARQUEE') {
       shouldInit = false;
       dispatch({ type: 'SET_MOUSE_MODE', mouseMode: 'COLLECT' });
+    } else {
+      shouldInit = false;
     }
     if (shouldInit) {
       initMouseControlsSystem(store, handlers);
@@ -10724,7 +10702,7 @@ function LevelEditor(props) {
       'div',
       null,
       React.createElement(Dropdown, {
-        options: ['CREATE ENTITIES', 'PHEROMONES', 'COPY-PASTE', 'MARQUEE'],
+        options: ['CREATE ENTITIES', 'PHEROMONES', 'COPY-PASTE', 'MARQUEE', 'NONE'],
         selected: editor.paletteMode,
         onChange: function onChange(paletteMode) {
           setEditor(_extends({}, editor, { paletteMode: paletteMode }));
