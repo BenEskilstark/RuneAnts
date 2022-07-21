@@ -516,12 +516,12 @@ var config = {
 
   // task-specific params
   WANDER: {
-    base: 3,
+    base: 1,
     forwardMovementBonus: 0,
     prevPositionPenalty: -100,
     ALERT: 500,
     FOOD: 100,
-    FOLLOW: 100,
+    FOLLOW: 2000,
     COLONY: -1
   },
   RETRIEVE: {
@@ -537,7 +537,7 @@ var config = {
     forwardMovementBonus: 500,
     prevPositionPenalty: -1000,
     ALERT: 0,
-    FOOD: 20,
+    FOOD: 200,
     COLONY: 1000
   },
   DEFEND: {
@@ -3568,6 +3568,7 @@ var renderPheromones = function renderPheromones(ctx, game) {
     for (var y = Math.max(0, Math.floor(game.viewPos.y)); y < Math.min(game.viewPos.y + game.viewHeight, game.gridHeight); y++) {
       if (!onScreen(game, { position: { x: x, y: y }, width: 1, height: 1 })) continue;
       for (var playerID in game.players) {
+        if (playerID != game.playerID) continue;
         var player = game.players[playerID];
         var pheromonesAtCell = grid[x][y][player.id];
         for (var pheromoneType in pheromonesAtCell) {
@@ -6171,7 +6172,7 @@ var agentDecideMove = function agentDecideMove(game, agent) {
       if (Math.abs(basePher.FOOD - pher.FOOD) >= 4) {
         neighborScores[i] += (pher.FOOD - basePher.FOOD) * taskConfig.FOOD;
       } else {
-        // otherwise, wagent to go to smaller neighbor since food pher decreases in
+        // otherwise, agent to go to smaller neighbor since food pher decreases in
         // strength as you go away from the colony
         neighborScores[i] += -1 * (pher.FOOD - basePher.FOOD) * taskConfig.FOOD;
       }
@@ -6232,18 +6233,17 @@ var agentDecideMove = function agentDecideMove(game, agent) {
 };
 
 var agentDecideTask = function agentDecideTask(game, agent, nextPos) {
-  if (agent.COLLECTABLE) return; // collectables already have their task set
 
-  // switch to retrieve if holding food
+  // switch to RETURN if holding food
   var holdingFood = agent.holding != null && agent.holding.type == 'FOOD';
-  if (holdingFood && agent.task != 'RETURN') {
-    agent.task = 'RETURN';
+  if (holdingFood) {
+    agentSwitchTask(game, agent, 'RETURN');
     return agent.task;
   }
 
-  // switch to wander if retrieving without food
+  // switch to WANDER if returning without food
   if (!holdingFood && agent.task == 'RETURN') {
-    agent.task = 'WANDER';
+    agentSwitchTask(game, agent, 'WANDER');
     return agent.task;
   }
 
@@ -6251,13 +6251,19 @@ var agentDecideTask = function agentDecideTask(game, agent, nextPos) {
 
   // switch to DEFEND if on ALERT pheromone
   if (pherAtCell['ALERT'] > 0) {
-    agent.task = 'DEFEND';
+    agentSwitchTask(game, agent, 'DEFEND');
     return agent.task;
   }
 
   // switch to RETRIEVE if on FOOD pheromone
-  if (pherAtCell['FOOD'] > 0) {
-    agent.task = 'RETRIEVE';
+  if (pherAtCell['FOOD'] > 0 && !holdingFood) {
+    agentSwitchTask(game, agent, 'RETRIEVE');
+    return agent.task;
+  }
+
+  // switch to WANDER if retrieving without pheromone
+  if (pherAtCell['FOOD'] == 0 && agent.task == 'RETRIEVE') {
+    agentSwitchTask(game, agent, 'WANDER');
     return agent.task;
   }
 

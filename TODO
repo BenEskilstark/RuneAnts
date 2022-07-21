@@ -3,9 +3,10 @@
 - - - - - - - ANTS - - - - - - -
   - ant behavior
     - follow pheromones more readily
+      - when you're on the line for following everything looks basically the same
     - food retrieval
-      - constantly turning back on themselves when returning with food
-      - not following food pheromone readily
+      - ants are trying to pick stuff up and failing repeatedly
+        - because of a move and pickup queued together?
     - fight/grapple
       - damage never being dealt
       - fix sprite ordering
@@ -13,7 +14,10 @@
   - scenario:
     - touch and drag to add pheromone
       - allow switching between level editor modes and mouse mode
+      - interpolate follow pheromone placement (and quantities) - see mouseThunks
     - food spawn system
+    - add score
+      - enemies killed, ants spawned?
 
 
 - - - - - POLISH - - - - -
@@ -32,8 +36,6 @@
 
 
 - - - - - - - FIX - - - - - - - -
-  - ants are trying to pick stuff up and failing repeatedly
-  - ants will continuously turn around when very close to the colony
   - pheromoneWorker appears to not update after reset in level editor
 
 

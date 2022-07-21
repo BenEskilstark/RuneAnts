@@ -516,12 +516,12 @@ var config = {
 
   // task-specific params
   WANDER: {
-    base: 3,
+    base: 1,
     forwardMovementBonus: 0,
     prevPositionPenalty: -100,
     ALERT: 500,
     FOOD: 100,
-    FOLLOW: 100,
+    FOLLOW: 2000,
     COLONY: -1
   },
   RETRIEVE: {
@@ -537,7 +537,7 @@ var config = {
     forwardMovementBonus: 500,
     prevPositionPenalty: -1000,
     ALERT: 0,
-    FOOD: 20,
+    FOOD: 200,
     COLONY: 1000
   },
   DEFEND: {

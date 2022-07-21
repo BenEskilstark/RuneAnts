@@ -477,6 +477,7 @@ const renderPheromones = (ctx, game): void => {
     ) {
       if (!onScreen(game, {position: {x, y}, width: 1, height: 1})) continue;
       for (const playerID in game.players) {
+        if (playerID != game.playerID) continue;
         const player = game.players[playerID];
         const pheromonesAtCell = grid[x][y][player.id];
         for (const pheromoneType in pheromonesAtCell) {

@@ -203,7 +203,7 @@ const agentDecideMove = (game: Game, agent: Agent): Game => {
         neighborScores[i] +=
           (pher.FOOD - basePher.FOOD) * taskConfig.FOOD;
       } else {
-        // otherwise, wagent to go to smaller neighbor since food pher decreases in
+        // otherwise, agent to go to smaller neighbor since food pher decreases in
         // strength as you go away from the colony
         neighborScores[i] +=
           -1 * (pher.FOOD - basePher.FOOD) * taskConfig.FOOD;
@@ -266,18 +266,17 @@ const agentDecideMove = (game: Game, agent: Agent): Game => {
 
 
 const agentDecideTask = (game, agent, nextPos): void => {
-  if (agent.COLLECTABLE) return; // collectables already have their task set
 
-  // switch to retrieve if holding food
+  // switch to RETURN if holding food
   const holdingFood = agent.holding != null && agent.holding.type == 'FOOD';
-  if (holdingFood && agent.task != 'RETURN') {
-    agent.task = 'RETURN';
+  if (holdingFood) {
+    agentSwitchTask(game, agent, 'RETURN');
     return agent.task;
   }
 
-  // switch to wander if retrieving without food
+  // switch to WANDER if returning without food
   if (!holdingFood && agent.task == 'RETURN') {
-    agent.task = 'WANDER';
+    agentSwitchTask(game, agent, 'WANDER');
     return agent.task;
   }
 
@@ -285,13 +284,19 @@ const agentDecideTask = (game, agent, nextPos): void => {
 
   // switch to DEFEND if on ALERT pheromone
   if (pherAtCell['ALERT'] > 0) {
-    agent.task = 'DEFEND';
+    agentSwitchTask(game, agent, 'DEFEND');
     return agent.task;
   }
 
   // switch to RETRIEVE if on FOOD pheromone
-  if (pherAtCell['FOOD'] > 0) {
-    agent.task = 'RETRIEVE';
+  if (pherAtCell['FOOD'] > 0 && !holdingFood) {
+    agentSwitchTask(game, agent, 'RETRIEVE');
+    return agent.task;
+  }
+
+  // switch to WANDER if retrieving without pheromone
+  if (pherAtCell['FOOD'] == 0 && agent.task == 'RETRIEVE') {
+    agentSwitchTask(game, agent, 'WANDER');
     return agent.task;
   }
 
