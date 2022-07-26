@@ -32,6 +32,16 @@ const gameReducer = (game: Game, action: Action): Game => {
       queueAction(game, entity, entityAction);
       return game;
     }
+    case 'SPAWN_FOOD': {
+      const {pos, size} = action;
+      game.timeSinceLastFoodSpawn = 0;
+      for (let x = 0; x < size; x++) {
+        for (let y = 0; y < size; y++) {
+          addEntity(game, Entities.FOOD.make(game, add(pos, {x, y})));
+        }
+      }
+      return game;
+    }
     case 'SET_VIEW_POS': {
       const {viewPos, viewWidth, viewHeight} = action;
       game.viewPos = viewPos;

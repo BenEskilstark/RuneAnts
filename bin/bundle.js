@@ -18,7 +18,10 @@ var config = {
   audioFiles: [{ path: 'audio/Song Oct. 9.wav', type: 'wav' }],
 
   dispersingPheromoneUpdateRate: 6,
-  gravity: -100
+  gravity: -100,
+
+  foodSpawnInterval: 1000 * 5,
+  minFood: 50
 
 };
 
@@ -441,7 +444,7 @@ var spriteRenderFn = function spriteRenderFn(ctx, game, ant) {
 module.exports = {
   make: make, render: render, config: config
 };
-},{"../render/renderAgent":31,"../selectors/sprites":40,"../utils/vectors":93,"./makeEntity":10}],3:[function(require,module,exports){
+},{"../render/renderAgent":31,"../selectors/sprites":40,"../utils/vectors":94,"./makeEntity":10}],3:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -1141,7 +1144,7 @@ var render = function render(ctx, game, entity) {
 module.exports = {
   make: make, render: render, config: config
 };
-},{"../render/renderAgent":31,"../render/renderSegmented":33,"../utils/vectors":93,"./agent.js":2}],16:[function(require,module,exports){
+},{"../render/renderAgent":31,"../render/renderSegmented":33,"../utils/vectors":94,"./agent.js":2}],16:[function(require,module,exports){
 'use strict';
 
 var _require = require('redux'),
@@ -1170,7 +1173,7 @@ function renderUI(store) {
     modal: state.modal
   }), document.getElementById('container'));
 }
-},{"./reducers/rootReducer":28,"./ui/Main.react":76,"react":131,"react-dom":128,"redux":132}],17:[function(require,module,exports){
+},{"./reducers/rootReducer":28,"./ui/Main.react":77,"react":132,"react-dom":129,"redux":133}],17:[function(require,module,exports){
 // @flow
 
 module.exports = {
@@ -1294,6 +1297,19 @@ var gameReducer = function gameReducer(game, action) {
             entity = action.entity;
 
         queueAction(game, entity, entityAction);
+        return game;
+      }
+    case 'SPAWN_FOOD':
+      {
+        var pos = action.pos,
+            size = action.size;
+
+        game.timeSinceLastFoodSpawn = 0;
+        for (var x = 0; x < size; x++) {
+          for (var y = 0; y < size; y++) {
+            addEntity(game, Entities.FOOD.make(game, add(pos, { x: x, y: y })));
+          }
+        }
         return game;
       }
     case 'SET_VIEW_POS':
@@ -1437,12 +1453,12 @@ var gameReducer = function gameReducer(game, action) {
 
           game.viewImage.isStale = true;
 
-          var _loop = function _loop(x) {
-            var _loop2 = function _loop2(y) {
-              var entities = lookupInGrid(game.grid, add(position, { x: x, y: y })).map(function (id) {
+          var _loop = function _loop(_x) {
+            var _loop2 = function _loop2(_y) {
+              var entities = lookupInGrid(game.grid, add(position, { x: _x, y: _y })).map(function (id) {
                 return game.entities[id];
               }).filter(function (e) {
-                return equals(e.position, add(position, { x: x, y: y }));
+                return equals(e.position, add(position, { x: _x, y: _y }));
               });
               var _iteratorNormalCompletion = true;
               var _didIteratorError = false;
@@ -1452,11 +1468,11 @@ var gameReducer = function gameReducer(game, action) {
                 for (var _iterator = entities[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
                   var copyEntity = _step.value;
 
-                  var pos = add(pastePos, { x: x, y: y });
-                  var key = encodePosition(pos);
-                  game.viewImage.stalePositions[key] = pos;
+                  var _pos = add(pastePos, { x: _x, y: _y });
+                  var key = encodePosition(_pos);
+                  game.viewImage.stalePositions[key] = _pos;
 
-                  var _entity3 = _extends({}, copyEntity, { position: pos });
+                  var _entity3 = _extends({}, copyEntity, { position: _pos });
                   if (!entityInsideGrid(game, _entity3)) continue;
                   addEntity(game, _entity3);
                 }
@@ -1476,13 +1492,13 @@ var gameReducer = function gameReducer(game, action) {
               }
             };
 
-            for (var y = 0; y < height; y++) {
-              _loop2(y);
+            for (var _y = 0; _y < height; _y++) {
+              _loop2(_y);
             }
           };
 
-          for (var x = 0; x < width; x++) {
-            _loop(x);
+          for (var _x = 0; _x < width; _x++) {
+            _loop(_x);
           }
 
           return {
@@ -1505,10 +1521,10 @@ var gameReducer = function gameReducer(game, action) {
               width = _rect.width,
               height = _rect.height;
 
-          for (var x = 0; x < width; x++) {
-            for (var y = 0; y < height; y++) {
-              var pos = add(_position, { x: x, y: y });
-              fillPheromone(game, pos, _pheromoneType, playerID, quantity);
+          for (var _x2 = 0; _x2 < width; _x2++) {
+            for (var _y2 = 0; _y2 < height; _y2++) {
+              var _pos2 = add(_position, { x: _x2, y: _y2 });
+              fillPheromone(game, _pos2, _pheromoneType, playerID, quantity);
             }
           }
         } else if (gridPos != null) {
@@ -1580,10 +1596,10 @@ var gameReducer = function gameReducer(game, action) {
             _width = _rect2.width,
             _height = _rect2.height;
 
-        for (var _x = 0; _x < _width; _x++) {
-          for (var _y = 0; _y < _height; _y++) {
-            var _pos = add(_position3, { x: _x, y: _y });
-            var ids = lookupInGrid(game.grid, _pos);
+        for (var _x3 = 0; _x3 < _width; _x3++) {
+          for (var _y3 = 0; _y3 < _height; _y3++) {
+            var _pos3 = add(_position3, { x: _x3, y: _y3 });
+            var ids = lookupInGrid(game.grid, _pos3);
             var _iteratorNormalCompletion3 = true;
             var _didIteratorError3 = false;
             var _iteratorError3 = undefined;
@@ -1855,7 +1871,7 @@ function createEntitiesReducer(game, action) {
 }
 
 module.exports = { gameReducer: gameReducer };
-},{"../config":1,"../entities/registry":11,"../render/render":30,"../selectors/pheromones":39,"../simulation/actionQueue":42,"../simulation/entityOperations":44,"../simulation/pheromones":47,"../utils/gridHelpers":89,"../utils/helpers":90,"../utils/vectors":93}],25:[function(require,module,exports){
+},{"../config":1,"../entities/registry":11,"../render/render":30,"../selectors/pheromones":39,"../simulation/actionQueue":42,"../simulation/entityOperations":44,"../simulation/pheromones":47,"../utils/gridHelpers":90,"../utils/helpers":91,"../utils/vectors":94}],25:[function(require,module,exports){
 'use strict';
 
 var hotKeysReducer = function hotKeysReducer(hotKeys, action) {
@@ -2185,6 +2201,7 @@ var rootReducer = function rootReducer(state, action) {
         state.editor.index += 1;
       }
     case 'SET':
+    case 'SPAWN_FOOD':
     case 'UPDATE_ALL_PHEROMONES':
     case 'SET_GAME_OVER':
     case 'CREATE_ENTITY':
@@ -2411,7 +2428,7 @@ function upgradeReducer(state, action) {
 }
 
 module.exports = { rootReducer: rootReducer };
-},{"../levels/levels":17,"../simulation/entityOperations":44,"../state/gameState":48,"../state/state":49,"../utils/helpers":90,"./gameReducer":24,"./hotKeysReducer":25,"./modalReducer":26,"./mouseReducer":27,"./tickReducer":29}],29:[function(require,module,exports){
+},{"../levels/levels":17,"../simulation/entityOperations":44,"../state/gameState":48,"../state/state":49,"../utils/helpers":91,"./gameReducer":24,"./hotKeysReducer":25,"./modalReducer":26,"./mouseReducer":27,"./tickReducer":29}],29:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -2566,6 +2583,7 @@ var doTick = function doTick(game) {
 
   // game/frame timing
   game.timeSinceLastTick = curTickTime - game.prevTickTime;
+  game.timeSinceLastFoodSpawn += game.timeSinceLastTick;
 
   // these are the ECS "systems"
   keepControlledMoving(game);
@@ -2894,6 +2912,7 @@ var updateBases = function updateBases(game) {
           if (ant.holding != null && ant.holding.type == 'FOOD' && equals(ant.position, base.position)) {
             removeEntity(game, ant.holding);
             ant.holding = null;
+            ant.holdingIDs = [];
 
             addEntity(game, Entities.ANT.make(game, base.position, base.playerID));
           }
@@ -2980,7 +2999,7 @@ var updateTicker = function updateTicker(game) {
 };
 
 module.exports = { tickReducer: tickReducer };
-},{"../config":1,"../entities/registry":11,"../render/render":30,"../selectors/buildings":34,"../selectors/collisions":35,"../selectors/misc":36,"../selectors/neighbors":38,"../selectors/pheromones":39,"../selectors/sprites":40,"../simulation/actionOperations":41,"../simulation/actionQueue.js":42,"../simulation/agentOperations":43,"../simulation/entityOperations":44,"../simulation/miscOperations":46,"../simulation/pheromones":47,"../utils/gridHelpers":89,"../utils/helpers":90,"../utils/stochastic":92,"../utils/vectors":93}],30:[function(require,module,exports){
+},{"../config":1,"../entities/registry":11,"../render/render":30,"../selectors/buildings":34,"../selectors/collisions":35,"../selectors/misc":36,"../selectors/neighbors":38,"../selectors/pheromones":39,"../selectors/sprites":40,"../simulation/actionOperations":41,"../simulation/actionQueue.js":42,"../simulation/agentOperations":43,"../simulation/entityOperations":44,"../simulation/miscOperations":46,"../simulation/pheromones":47,"../utils/gridHelpers":90,"../utils/helpers":91,"../utils/stochastic":93,"../utils/vectors":94}],30:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -3611,7 +3630,7 @@ var renderPheromones = function renderPheromones(ctx, game) {
 };
 
 module.exports = { render: render };
-},{"../config":1,"../entities/registry":11,"../selectors/misc":36,"../selectors/mouseInteractionSelectors":37,"../selectors/sprites":40,"../utils/gridHelpers":89,"../utils/helpers":90,"../utils/vectors":93}],31:[function(require,module,exports){
+},{"../config":1,"../entities/registry":11,"../selectors/misc":36,"../selectors/mouseInteractionSelectors":37,"../selectors/sprites":40,"../utils/gridHelpers":90,"../utils/helpers":91,"../utils/vectors":94}],31:[function(require,module,exports){
 'use strict';
 
 var _require = require('../utils/vectors'),
@@ -3703,7 +3722,7 @@ var renderAgent = function renderAgent(ctx, game, agent, spriteRenderFn) {
 };
 
 module.exports = { renderAgent: renderAgent };
-},{"../utils/gridHelpers":89,"../utils/helpers":90,"../utils/vectors":93,"./renderHealthBar":32}],32:[function(require,module,exports){
+},{"../utils/gridHelpers":90,"../utils/helpers":91,"../utils/vectors":94,"./renderHealthBar":32}],32:[function(require,module,exports){
 'use strict';
 
 var _require = require('../utils/vectors'),
@@ -3745,7 +3764,7 @@ var renderHealthBar = function renderHealthBar(ctx, entity, maxHealth) {
 };
 
 module.exports = { renderHealthBar: renderHealthBar };
-},{"../utils/gridHelpers":89,"../utils/vectors":93}],33:[function(require,module,exports){
+},{"../utils/gridHelpers":90,"../utils/vectors":94}],33:[function(require,module,exports){
 'use strict';
 
 var _require = require('../selectors/sprites'),
@@ -3893,7 +3912,7 @@ module.exports = {
   renderSegmented: renderSegmented,
   renderWormCanvas: renderWormCanvas
 };
-},{"../selectors/misc":36,"../selectors/sprites":40,"../utils/vectors":93,"./renderHealthBar":32}],34:[function(require,module,exports){
+},{"../selectors/misc":36,"../selectors/sprites":40,"../utils/vectors":94,"./renderHealthBar":32}],34:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -4007,7 +4026,7 @@ module.exports = {
   collidesWith: collidesWith,
   collisionsAtSpace: collisionsAtSpace
 };
-},{"../utils/gridHelpers":89}],36:[function(require,module,exports){
+},{"../utils/gridHelpers":90}],36:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -4256,7 +4275,7 @@ module.exports = {
   getControlledEntityInteraction: getControlledEntityInteraction,
   getManningAction: getManningAction
 };
-},{"../selectors/collisions":35,"../selectors/neighbors":38,"../simulation/actionQueue":42,"../utils/gridHelpers":89,"../utils/helpers":90,"../utils/vectors":93}],37:[function(require,module,exports){
+},{"../selectors/collisions":35,"../selectors/neighbors":38,"../simulation/actionQueue":42,"../utils/gridHelpers":90,"../utils/helpers":91,"../utils/vectors":94}],37:[function(require,module,exports){
 'use strict';
 
 var _require = require('../utils/vectors'),
@@ -4351,7 +4370,7 @@ module.exports = {
   isNeighboringColonyPher: isNeighboringColonyPher,
   isAboveSomething: isAboveSomething
 };
-},{"../entities/registry":11,"../selectors/buildings":34,"../selectors/neighbors":38,"../selectors/pheromones":39,"../utils/gridHelpers":89,"../utils/helpers":90,"../utils/vectors":93}],38:[function(require,module,exports){
+},{"../entities/registry":11,"../selectors/buildings":34,"../selectors/neighbors":38,"../selectors/pheromones":39,"../utils/gridHelpers":90,"../utils/helpers":91,"../utils/vectors":94}],38:[function(require,module,exports){
 'use strict';
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
@@ -4618,7 +4637,7 @@ module.exports = {
   getFreeNeighborPositions: getFreeNeighborPositions,
   areNeighbors: areNeighbors
 };
-},{"../selectors/collisions":35,"../utils/gridHelpers":89,"../utils/vectors":93}],39:[function(require,module,exports){
+},{"../selectors/collisions":35,"../utils/gridHelpers":90,"../utils/vectors":94}],39:[function(require,module,exports){
 'use strict';
 
 var _require = require('../utils/vectors'),
@@ -4821,7 +4840,7 @@ module.exports = {
   getQuantityForStalePos: getQuantityForStalePos,
   isPositionBlockingPheromone: isPositionBlockingPheromone
 };
-},{"../config":1,"../selectors/neighbors":38,"../utils/gridHelpers":89,"../utils/helpers":90,"../utils/vectors":93}],40:[function(require,module,exports){
+},{"../config":1,"../selectors/neighbors":38,"../utils/gridHelpers":90,"../utils/helpers":91,"../utils/vectors":94}],40:[function(require,module,exports){
 'use strict';
 
 var _require = require('../utils/vectors'),
@@ -5318,7 +5337,7 @@ module.exports = {
   getSegmentHead: getSegmentHead,
   getSegmentTail: getSegmentTail
 };
-},{"../config":1,"../selectors/misc":36,"../selectors/neighbors":38,"../simulation/actionQueue":42,"../utils/gridHelpers":89,"../utils/helpers":90,"../utils/vectors":93}],41:[function(require,module,exports){
+},{"../config":1,"../selectors/misc":36,"../selectors/neighbors":38,"../simulation/actionQueue":42,"../utils/gridHelpers":90,"../utils/helpers":91,"../utils/vectors":94}],41:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -5672,7 +5691,7 @@ var entityFight = function entityFight(game, entity, target) {
 module.exports = {
   entityStartCurrentAction: entityStartCurrentAction
 };
-},{"../entities/registry":11,"../selectors/collisions":35,"../selectors/misc":36,"../selectors/neighbors":38,"../selectors/sprites":40,"../simulation/actionQueue":42,"../simulation/agentOperations":43,"../simulation/entityOperations":44,"../simulation/explosiveOperations":45,"../simulation/miscOperations":46,"../simulation/pheromones":47,"../utils/gridHelpers":89,"../utils/helpers":90,"../utils/vectors":93}],42:[function(require,module,exports){
+},{"../entities/registry":11,"../selectors/collisions":35,"../selectors/misc":36,"../selectors/neighbors":38,"../selectors/sprites":40,"../simulation/actionQueue":42,"../simulation/agentOperations":43,"../simulation/entityOperations":44,"../simulation/explosiveOperations":45,"../simulation/miscOperations":46,"../simulation/pheromones":47,"../utils/gridHelpers":90,"../utils/helpers":91,"../utils/vectors":94}],42:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -5904,7 +5923,7 @@ module.exports = {
   makeAction: makeAction,
   getFrame: getFrame
 };
-},{"../selectors/pheromones":39,"../utils/helpers":90,"../utils/vectors":93}],43:[function(require,module,exports){
+},{"../selectors/pheromones":39,"../utils/helpers":91,"../utils/vectors":94}],43:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -5990,7 +6009,7 @@ var agentPickup = function agentPickup(game, agent, entity, pickupPos) {
   if (!config.pickupTypes.includes(entity.type)) return game;
 
   // support picking up more than 1 thing
-  if (agent.holdingIDs.length >= config.maxHold) return game;
+  // if (agent.holdingIDs.length >= config.maxHold) return game;
 
   // update task need if agent not doing go_to_dirt picks up marked dirt
   // if (
@@ -6354,7 +6373,7 @@ module.exports = {
   agentDecideMove: agentDecideMove,
   agentSwitchTask: agentSwitchTask
 };
-},{"../config":1,"../entities/registry":11,"../selectors/collisions":35,"../selectors/misc":36,"../selectors/neighbors":38,"../selectors/pheromones":39,"../simulation/actionQueue":42,"../simulation/entityOperations":44,"../simulation/pheromones":47,"../utils/gridHelpers":89,"../utils/helpers":90,"../utils/stochastic":92,"../utils/vectors":93}],44:[function(require,module,exports){
+},{"../config":1,"../entities/registry":11,"../selectors/collisions":35,"../selectors/misc":36,"../selectors/neighbors":38,"../selectors/pheromones":39,"../simulation/actionQueue":42,"../simulation/entityOperations":44,"../simulation/pheromones":47,"../utils/gridHelpers":90,"../utils/helpers":91,"../utils/stochastic":93,"../utils/vectors":94}],44:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -7069,7 +7088,7 @@ module.exports = {
   insertEntityInGrid: insertEntityInGrid,
   removeEntityFromGrid: removeEntityFromGrid
 };
-},{"../config":1,"../entities/makeEntity":10,"../entities/registry":11,"../properties/registry":23,"../selectors/neighbors":38,"../selectors/pheromones":39,"../simulation/pheromones":47,"../utils/gridHelpers":89,"../utils/helpers":90,"../utils/vectors":93}],45:[function(require,module,exports){
+},{"../config":1,"../entities/makeEntity":10,"../entities/registry":11,"../properties/registry":23,"../selectors/neighbors":38,"../selectors/pheromones":39,"../simulation/pheromones":47,"../utils/gridHelpers":90,"../utils/helpers":91,"../utils/vectors":94}],45:[function(require,module,exports){
 'use strict';
 
 var _require = require('../simulation/actionQueue'),
@@ -7200,7 +7219,7 @@ var triggerExplosion = function triggerExplosion(game, explosive, precompute) {
 module.exports = {
   triggerExplosion: triggerExplosion
 };
-},{"../simulation/actionQueue":42,"../simulation/entityOperations":44,"../simulation/miscOperations":46,"../utils/gridHelpers":89,"../utils/helpers":90,"../utils/vectors":93}],46:[function(require,module,exports){
+},{"../simulation/actionQueue":42,"../simulation/entityOperations":44,"../simulation/miscOperations":46,"../utils/gridHelpers":90,"../utils/helpers":91,"../utils/vectors":94}],46:[function(require,module,exports){
 'use strict';
 
 var _require = require('../simulation/actionQueue'),
@@ -7587,7 +7606,7 @@ module.exports = {
   refreshPheromones: refreshPheromones,
   getBiggestNeighborVal: getBiggestNeighborVal
 };
-},{"../config":1,"../selectors/neighbors":38,"../selectors/pheromones":39,"../utils/gridHelpers":89,"../utils/helpers":90,"../utils/vectors":93}],48:[function(require,module,exports){
+},{"../config":1,"../selectors/neighbors":38,"../selectors/pheromones":39,"../utils/gridHelpers":90,"../utils/helpers":91,"../utils/vectors":94}],48:[function(require,module,exports){
 'use strict';
 
 var _require = require('../entities/makeEntity'),
@@ -7668,6 +7687,7 @@ var initBaseState = function initBaseState(gridSize, numPlayers) {
     prevTickTime: 0,
     totalGameTime: 0,
     timeSinceLastTick: 0,
+    timeSinceLastFoodSpawn: 0,
 
     pheromoneDisplay: {
       COLONY: false,
@@ -7685,6 +7705,7 @@ var initBaseState = function initBaseState(gridSize, numPlayers) {
       OIL: true,
       SULPHUR_DIOXIDE: true
     },
+    showPheromoneValues: false,
     maxMinimap: false,
 
     sprites: {},
@@ -7791,7 +7812,7 @@ var initBaseState = function initBaseState(gridSize, numPlayers) {
 };
 
 module.exports = { initBaseState: initBaseState, initPlayer: initPlayer };
-},{"../config":1,"../entities/makeEntity":10,"../entities/registry":11,"../properties/registry":23,"../simulation/entityOperations":44,"../utils/gridHelpers":89,"../utils/stochastic":92,"../utils/vectors":93}],49:[function(require,module,exports){
+},{"../config":1,"../entities/makeEntity":10,"../entities/registry":11,"../properties/registry":23,"../simulation/entityOperations":44,"../utils/gridHelpers":90,"../utils/stochastic":93,"../utils/vectors":94}],49:[function(require,module,exports){
 'use strict';
 
 var initState = function initState() {
@@ -7807,6 +7828,44 @@ var initState = function initState() {
 
 module.exports = { initState: initState };
 },{}],50:[function(require,module,exports){
+'use strict';
+
+var _require = require('../utils/stochastic'),
+    randomIn = _require.randomIn,
+    normalIn = _require.normalIn;
+
+var globalConfig = require('../config').config;
+
+var _require2 = require('../simulation/pheromones'),
+    fillPheromone = _require2.fillPheromone;
+
+var initFoodSpawnSystem = function initFoodSpawnSystem(store) {
+  var dispatch = store.dispatch;
+
+  var time = -1;
+  store.subscribe(function () {
+    var state = store.getState();
+    var game = state.game;
+
+    if (!game) return;
+    if (game.time == time) return;
+    time = game.time;
+
+    // spawn new food when atleast foodSpawnInterval has passed and
+    // there's less than minFood food on the map
+    if (time > 1 && game.timeSinceLastFoodSpawn > globalConfig.foodSpawnInterval && game.FOOD.length < globalConfig.minFood) {
+      var size = normalIn(3, 9);
+      var pos = {
+        x: normalIn(0, game.gridWidth - size),
+        y: normalIn(0, game.gridHeight - size)
+      };
+      dispatch({ type: 'SPAWN_FOOD', pos: pos, size: size });
+    }
+  });
+};
+
+module.exports = { initFoodSpawnSystem: initFoodSpawnSystem };
+},{"../config":1,"../simulation/pheromones":47,"../utils/stochastic":93}],51:[function(require,module,exports){
 'use strict';
 
 var React = require('react');
@@ -7955,7 +8014,7 @@ var handleGameWon = function handleGameWon(store, dispatch, state, reason) {
 };
 
 module.exports = { initGameOverSystem: initGameOverSystem };
-},{"../render/render":30,"../ui/components/Button.react":80,"../ui/components/Divider.react":82,"../ui/components/Modal.react":85,"../utils/gridHelpers":89,"../utils/helpers":90,"../utils/vectors":93,"axios":96,"react":131}],51:[function(require,module,exports){
+},{"../render/render":30,"../ui/components/Button.react":81,"../ui/components/Divider.react":83,"../ui/components/Modal.react":86,"../utils/gridHelpers":90,"../utils/helpers":91,"../utils/vectors":94,"axios":97,"react":132}],52:[function(require,module,exports){
 'use strict';
 
 var initKeyboardControlsSystem = function initKeyboardControlsSystem(store) {
@@ -8090,7 +8149,7 @@ var getUpDownLeftRight = function getUpDownLeftRight(ev) {
 };
 
 module.exports = { initKeyboardControlsSystem: initKeyboardControlsSystem };
-},{}],52:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 'use strict';
 
 var _require = require('../utils/stochastic'),
@@ -8232,7 +8291,7 @@ function doStartWave(dispatch, game, missileFrequency) {
 }
 
 module.exports = { initMissileAttackSystem: initMissileAttackSystem };
-},{"../config":1,"../entities/registry":11,"../utils/stochastic":92}],53:[function(require,module,exports){
+},{"../config":1,"../entities/registry":11,"../utils/stochastic":93}],54:[function(require,module,exports){
 'use strict';
 
 var _require = require('../config'),
@@ -8465,7 +8524,7 @@ var getMousePixel = function getMousePixel(ev, canvas) {
 };
 
 module.exports = { initMouseControlsSystem: initMouseControlsSystem };
-},{"../config":1,"../utils/gridHelpers":89,"../utils/helpers":90,"../utils/vectors":93}],54:[function(require,module,exports){
+},{"../config":1,"../utils/gridHelpers":90,"../utils/helpers":91,"../utils/vectors":94}],55:[function(require,module,exports){
 'use strict';
 
 var _require = require('../utils/vectors'),
@@ -8558,7 +8617,7 @@ var initPheromoneWorkerSystem = function initPheromoneWorkerSystem(store) {
 };
 
 module.exports = { initPheromoneWorkerSystem: initPheromoneWorkerSystem };
-},{"../entities/registry":11,"../utils/helpers":90,"../utils/vectors":93}],55:[function(require,module,exports){
+},{"../entities/registry":11,"../utils/helpers":91,"../utils/vectors":94}],56:[function(require,module,exports){
 'use strict';
 
 var _require = require('../utils/stochastic'),
@@ -8608,7 +8667,7 @@ var initRainSystem = function initRainSystem(store) {
 };
 
 module.exports = { initRainSystem: initRainSystem };
-},{"../config":1,"../simulation/pheromones":47,"../utils/stochastic":92}],56:[function(require,module,exports){
+},{"../config":1,"../simulation/pheromones":47,"../utils/stochastic":93}],57:[function(require,module,exports){
 'use strict';
 
 var initSpriteSheetSystem = function initSpriteSheetSystem(store) {
@@ -8669,7 +8728,7 @@ var loadSprite = function loadSprite(dispatch, state, name, src) {
 };
 
 module.exports = { initSpriteSheetSystem: initSpriteSheetSystem };
-},{}],57:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
 'use strict';
 
 var levels = require('../levels/levels');
@@ -8710,7 +8769,7 @@ function loadLevel(store, levelName, additionalUpgrades) {
 module.exports = {
   loadLevel: loadLevel
 };
-},{"../levels/levels":17,"../utils/proceduralLevel":91}],58:[function(require,module,exports){
+},{"../levels/levels":17,"../utils/proceduralLevel":92}],59:[function(require,module,exports){
 'use strict';
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
@@ -8840,7 +8899,7 @@ var handlePlace = function handlePlace(state, dispatch, gridPos, ignorePrevPos) 
 };
 
 module.exports = { handleCollect: handleCollect, handlePlace: handlePlace };
-},{"../entities/registry":11,"../selectors/buildings":34,"../selectors/mouseInteractionSelectors":37,"../selectors/neighbors":38,"../selectors/pheromones":39,"../utils/gridHelpers":89,"../utils/helpers":90,"../utils/vectors":93}],59:[function(require,module,exports){
+},{"../entities/registry":11,"../selectors/buildings":34,"../selectors/mouseInteractionSelectors":37,"../selectors/neighbors":38,"../selectors/pheromones":39,"../utils/gridHelpers":90,"../utils/helpers":91,"../utils/vectors":94}],60:[function(require,module,exports){
 'use strict';
 
 var React = require('react');
@@ -8873,7 +8932,7 @@ var BottomBar = function BottomBar(props) {
 };
 
 module.exports = BottomBar;
-},{"./InfoHUD.react":73,"react":131}],60:[function(require,module,exports){
+},{"./InfoHUD.react":74,"react":132}],61:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -9012,7 +9071,7 @@ function withPropsChecker(WrappedComponent) {
 }
 
 module.exports = React.memo(Canvas);
-},{"../config":1,"react":131}],61:[function(require,module,exports){
+},{"../config":1,"react":132}],62:[function(require,module,exports){
 'use strict';
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
@@ -9100,7 +9159,7 @@ var AudioWidget = function AudioWidget(props) {
 };
 
 module.exports = AudioWidget;
-},{"./Button.react":62,"react":131}],62:[function(require,module,exports){
+},{"./Button.react":63,"react":132}],63:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -9184,7 +9243,7 @@ function Button(props) {
 }
 
 module.exports = Button;
-},{"react":131}],63:[function(require,module,exports){
+},{"react":132}],64:[function(require,module,exports){
 'use strict';
 
 var React = require('react');
@@ -9224,7 +9283,7 @@ function Checkbox(props) {
 }
 
 module.exports = Checkbox;
-},{"react":131}],64:[function(require,module,exports){
+},{"react":132}],65:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -9244,7 +9303,7 @@ function Divider(props) {
 }
 
 module.exports = Divider;
-},{"react":131}],65:[function(require,module,exports){
+},{"react":132}],66:[function(require,module,exports){
 'use strict';
 
 var React = require('react');
@@ -9285,7 +9344,7 @@ var Dropdown = function Dropdown(props) {
 };
 
 module.exports = Dropdown;
-},{"react":131}],66:[function(require,module,exports){
+},{"react":132}],67:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -9315,7 +9374,7 @@ var InfoCard = function InfoCard(props) {
 };
 
 module.exports = InfoCard;
-},{"react":131}],67:[function(require,module,exports){
+},{"react":132}],68:[function(require,module,exports){
 'use strict';
 
 var React = require('react');
@@ -9389,7 +9448,7 @@ function Modal(props) {
 }
 
 module.exports = Modal;
-},{"../../utils/helpers":90,"./Button.react":62,"react":131}],68:[function(require,module,exports){
+},{"../../utils/helpers":91,"./Button.react":63,"react":132}],69:[function(require,module,exports){
 'use strict';
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
@@ -9479,7 +9538,7 @@ var submitValue = function submitValue(onChange, nextVal, onlyInt) {
 };
 
 module.exports = NumberField;
-},{"react":131}],69:[function(require,module,exports){
+},{"react":132}],70:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -9568,7 +9627,7 @@ var RadioPicker = function (_React$Component) {
 }(React.Component);
 
 module.exports = RadioPicker;
-},{"react":131}],70:[function(require,module,exports){
+},{"react":132}],71:[function(require,module,exports){
 'use strict';
 
 var React = require('react');
@@ -9639,7 +9698,7 @@ function Slider(props) {
 }
 
 module.exports = Slider;
-},{"./NumberField.react":68,"react":131}],71:[function(require,module,exports){
+},{"./NumberField.react":69,"react":132}],72:[function(require,module,exports){
 'use strict';
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
@@ -9818,7 +9877,7 @@ function ExperimentalSidebar(props) {
 }
 
 module.exports = ExperimentalSidebar;
-},{"./Components/Button.react":62,"./Components/Checkbox.react":63,"./Components/Divider.react":64,"./Components/Dropdown.react":65,"./Components/Slider.react":70,"react":131}],72:[function(require,module,exports){
+},{"./Components/Button.react":63,"./Components/Checkbox.react":64,"./Components/Divider.react":65,"./Components/Dropdown.react":66,"./Components/Slider.react":71,"react":132}],73:[function(require,module,exports){
 'use strict';
 
 var React = require('react');
@@ -9842,26 +9901,29 @@ var _require3 = require('../systems/mouseControlsSystem'),
 var _require4 = require('../systems/gameOverSystem'),
     initGameOverSystem = _require4.initGameOverSystem;
 
-var _require5 = require('../systems/spriteSheetSystem'),
-    initSpriteSheetSystem = _require5.initSpriteSheetSystem;
+var _require5 = require('../systems/foodSpawnSystem'),
+    initFoodSpawnSystem = _require5.initFoodSpawnSystem;
 
-var _require6 = require('../systems/rainSystem'),
-    initRainSystem = _require6.initRainSystem;
+var _require6 = require('../systems/spriteSheetSystem'),
+    initSpriteSheetSystem = _require6.initSpriteSheetSystem;
 
-var _require7 = require('../systems/missileAttackSystem'),
-    initMissileAttackSystem = _require7.initMissileAttackSystem;
+var _require7 = require('../systems/rainSystem'),
+    initRainSystem = _require7.initRainSystem;
 
-var _require8 = require('../systems/pheromoneWorkerSystem'),
-    initPheromoneWorkerSystem = _require8.initPheromoneWorkerSystem;
+var _require8 = require('../systems/missileAttackSystem'),
+    initMissileAttackSystem = _require8.initMissileAttackSystem;
 
-var _require9 = require('../systems/keyboardControlsSystem'),
-    initKeyboardControlsSystem = _require9.initKeyboardControlsSystem;
+var _require9 = require('../systems/pheromoneWorkerSystem'),
+    initPheromoneWorkerSystem = _require9.initPheromoneWorkerSystem;
+
+var _require10 = require('../systems/keyboardControlsSystem'),
+    initKeyboardControlsSystem = _require10.initKeyboardControlsSystem;
 
 var ExperimentalSidebar = require('./ExperimentalSidebar.react');
 
-var _require10 = require('../thunks/mouseInteractions'),
-    handleCollect = _require10.handleCollect,
-    handlePlace = _require10.handlePlace;
+var _require11 = require('../thunks/mouseInteractions'),
+    handleCollect = _require11.handleCollect,
+    handlePlace = _require11.handlePlace;
 
 var useEffect = React.useEffect,
     useState = React.useState,
@@ -9869,26 +9931,28 @@ var useEffect = React.useEffect,
     Component = React.Component,
     memo = React.memo;
 
-var _require11 = require('../utils/vectors'),
-    add = _require11.add,
-    subtract = _require11.subtract;
+var _require12 = require('../utils/vectors'),
+    equals = _require12.equals,
+    add = _require12.add,
+    subtract = _require12.subtract;
 
-var _require12 = require('../utils/gridHelpers'),
-    lookupInGrid = _require12.lookupInGrid;
+var _require13 = require('../utils/gridHelpers'),
+    lookupInGrid = _require13.lookupInGrid,
+    getPheromonesInCell = _require13.getPheromonesInCell;
 
-var _require13 = require('../utils/helpers'),
-    clamp = _require13.clamp,
-    isMobile = _require13.isMobile;
+var _require14 = require('../utils/helpers'),
+    clamp = _require14.clamp,
+    isMobile = _require14.isMobile;
 
-var _require14 = require('../selectors/misc'),
-    getControlledEntityInteraction = _require14.getControlledEntityInteraction,
-    getManningAction = _require14.getManningAction;
+var _require15 = require('../selectors/misc'),
+    getControlledEntityInteraction = _require15.getControlledEntityInteraction,
+    getManningAction = _require15.getManningAction;
 
-var _require15 = require('../simulation/actionQueue'),
-    isActionTypeQueued = _require15.isActionTypeQueued;
+var _require16 = require('../simulation/actionQueue'),
+    isActionTypeQueued = _require16.isActionTypeQueued;
 
-var _require16 = require('../render/render'),
-    render = _require16.render;
+var _require17 = require('../render/render'),
+    render = _require17.render;
 
 function Game(props) {
   var dispatch = props.dispatch,
@@ -9915,6 +9979,7 @@ function Game(props) {
     initKeyboardControlsSystem(store);
     // initSpriteSheetSystem(store);
     initGameOverSystem(store);
+    initFoodSpawnSystem(store);
     initPheromoneWorkerSystem(store);
     registerHotkeys(dispatch);
     initMouseControlsSystem(store, configureMouseHandlers(state.game));
@@ -10062,14 +10127,56 @@ function registerHotkeys(dispatch) {
 function configureMouseHandlers(game) {
   var handlers = {
     mouseMove: function mouseMove(state, dispatch, gridPos) {
-      if (state.game.mouse.isLeftDown) {
-        dispatch({ type: 'FILL_PHEROMONE',
-          gridPos: gridPos,
-          pheromoneType: 'FOLLOW',
-          playerID: state.game.playerID,
-          quantity: pheromones.FOLLOW.quantity
-        });
+      var game = state.game;
+      if (game.mouse.isLeftDown) {
+        var prevPos = game.prevInteractPos;
+        // const prevPos = game.mouse.downPos;
+        if (prevPos) {
+          var quantity = getPheromonesInCell(game.grid, prevPos, game.playerID).FOLLOW || pheromones.FOLLOW.quantity * 0.75;
+          var pos = prevPos;
+          dispatch({ type: 'FILL_PHEROMONE',
+            gridPos: pos,
+            pheromoneType: 'FOLLOW',
+            playerID: state.game.playerID,
+            quantity: quantity
+          });
+          while (!equals(pos, gridPos)) {
+            quantity += 1;
+            var diff = subtract(pos, gridPos);
+            pos = {
+              x: diff.x == 0 ? pos.x : pos.x - diff.x / Math.abs(diff.x),
+              y: diff.y == 0 ? pos.y : pos.y - diff.y / Math.abs(diff.y)
+            };
+            dispatch({ type: 'FILL_PHEROMONE',
+              gridPos: pos,
+              pheromoneType: 'FOLLOW',
+              playerID: state.game.playerID,
+              quantity: quantity
+            });
+          }
+          dispatch({ type: 'SET',
+            property: 'prevInteractPos',
+            value: gridPos
+          });
+        } else {
+          dispatch({ type: 'FILL_PHEROMONE',
+            gridPos: gridPos,
+            pheromoneType: 'FOLLOW',
+            playerID: state.game.playerID,
+            quantity: pheromones.FOLLOW.quantity * 0.75
+          });
+          dispatch({ type: 'SET',
+            property: 'prevInteractPos',
+            value: gridPos
+          });
+        }
       }
+    },
+    leftUp: function leftUp(state, dispatch, gridPos) {
+      dispatch({ type: 'SET',
+        property: 'prevInteractPos',
+        value: null
+      });
     },
     scroll: function scroll(state, dispatch, zoom) {
       dispatch({ type: 'INCREMENT_ZOOM', zoom: zoom });
@@ -10145,7 +10252,7 @@ function MiniTicker(props) {
 }
 
 module.exports = Game;
-},{"../config":1,"../render/render":30,"../selectors/misc":36,"../simulation/actionQueue":42,"../simulation/pheromones":47,"../systems/gameOverSystem":50,"../systems/keyboardControlsSystem":51,"../systems/missileAttackSystem":52,"../systems/mouseControlsSystem":53,"../systems/pheromoneWorkerSystem":54,"../systems/rainSystem":55,"../systems/spriteSheetSystem":56,"../thunks/mouseInteractions":58,"../utils/gridHelpers":89,"../utils/helpers":90,"../utils/vectors":93,"./BottomBar.react":59,"./Canvas.react":60,"./Components/Button.react":62,"./Components/Checkbox.react":63,"./Components/RadioPicker.react":69,"./ExperimentalSidebar.react":71,"./TopBar.react":78,"react":131}],73:[function(require,module,exports){
+},{"../config":1,"../render/render":30,"../selectors/misc":36,"../simulation/actionQueue":42,"../simulation/pheromones":47,"../systems/foodSpawnSystem":50,"../systems/gameOverSystem":51,"../systems/keyboardControlsSystem":52,"../systems/missileAttackSystem":53,"../systems/mouseControlsSystem":54,"../systems/pheromoneWorkerSystem":55,"../systems/rainSystem":56,"../systems/spriteSheetSystem":57,"../thunks/mouseInteractions":59,"../utils/gridHelpers":90,"../utils/helpers":91,"../utils/vectors":94,"./BottomBar.react":60,"./Canvas.react":61,"./Components/Button.react":63,"./Components/Checkbox.react":64,"./Components/RadioPicker.react":70,"./ExperimentalSidebar.react":72,"./TopBar.react":79,"react":132}],74:[function(require,module,exports){
 'use strict';
 
 var React = require('react');
@@ -10439,7 +10546,7 @@ var EntityInfoCard = function EntityInfoCard(props) {
 };
 
 module.exports = InfoHUD;
-},{"../config":1,"../entities/registry":11,"../selectors/pheromones":39,"../ui/components/InfoCard.react":84,"../utils/gridHelpers":89,"../utils/helpers":90,"react":131}],74:[function(require,module,exports){
+},{"../config":1,"../entities/registry":11,"../selectors/pheromones":39,"../ui/components/InfoCard.react":85,"../utils/gridHelpers":90,"../utils/helpers":91,"react":132}],75:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -11468,7 +11575,7 @@ function createEntityOptions(game, editor, setEditor) {
 }
 
 module.exports = LevelEditor;
-},{"../config":1,"../entities/registry":11,"../render/render":30,"../systems/mouseControlsSystem":53,"../utils/vectors":93,"./components/Button.react":80,"./components/Checkbox.react":81,"./components/Divider.react":82,"./components/Dropdown.react":83,"./components/NumberField.react":86,"./components/Slider.react":88,"react":131}],75:[function(require,module,exports){
+},{"../config":1,"../entities/registry":11,"../render/render":30,"../systems/mouseControlsSystem":54,"../utils/vectors":94,"./components/Button.react":81,"./components/Checkbox.react":82,"./components/Divider.react":83,"./components/Dropdown.react":84,"./components/NumberField.react":87,"./components/Slider.react":89,"react":132}],76:[function(require,module,exports){
 'use strict';
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
@@ -11898,7 +12005,7 @@ function playLevel(store, levelName, setLoadingProgress, setIsLoaded) {
 }
 
 module.exports = Lobby;
-},{"../config":1,"../levels/levels":17,"../systems/spriteSheetSystem":56,"../thunks/levelThunks":57,"../ui/components/Modal.react":85,"../ui/components/QuitButton.react":87,"../utils/helpers":90,"./components/AudioWidget.react":79,"./components/Button.react":80,"./components/Checkbox.react":81,"./components/Divider.react":82,"./components/Dropdown.react":83,"axios":96,"react":131}],76:[function(require,module,exports){
+},{"../config":1,"../levels/levels":17,"../systems/spriteSheetSystem":57,"../thunks/levelThunks":58,"../ui/components/Modal.react":86,"../ui/components/QuitButton.react":88,"../utils/helpers":91,"./components/AudioWidget.react":80,"./components/Button.react":81,"./components/Checkbox.react":82,"./components/Divider.react":83,"./components/Dropdown.react":84,"axios":97,"react":132}],77:[function(require,module,exports){
 'use strict';
 
 var React = require('react');
@@ -11945,7 +12052,7 @@ function Main(props) {
 }
 
 module.exports = Main;
-},{"./Game.react":72,"./LevelEditor.react":74,"./Lobby.react":75,"react":131}],77:[function(require,module,exports){
+},{"./Game.react":73,"./LevelEditor.react":75,"./Lobby.react":76,"react":132}],78:[function(require,module,exports){
 'use strict';
 
 var React = require('react');
@@ -12439,7 +12546,7 @@ function Resource(props) {
 }
 
 module.exports = PlacementPalette;
-},{"../config":1,"../entities/registry":11,"../selectors/buildings":34,"../ui/Components/InfoCard.react":66,"react":131}],78:[function(require,module,exports){
+},{"../config":1,"../entities/registry":11,"../selectors/buildings":34,"../ui/Components/InfoCard.react":67,"react":132}],79:[function(require,module,exports){
 'use strict';
 
 var React = require('react');
@@ -12726,23 +12833,23 @@ function dismissModal(dispatch) {
 }
 
 module.exports = TopBar;
-},{"../config":1,"../entities/registry":11,"../ui/PlacementPalette.react":77,"../ui/components/InfoCard.react":84,"../ui/components/QuitButton.react":87,"../utils/helpers":90,"./Components/AudioWidget.react":61,"./Components/Button.react":62,"./Components/Divider.react":64,"./Components/Modal.react":67,"react":131}],79:[function(require,module,exports){
-arguments[4][61][0].apply(exports,arguments)
-},{"./Button.react":80,"dup":61,"react":131}],80:[function(require,module,exports){
+},{"../config":1,"../entities/registry":11,"../ui/PlacementPalette.react":78,"../ui/components/InfoCard.react":85,"../ui/components/QuitButton.react":88,"../utils/helpers":91,"./Components/AudioWidget.react":62,"./Components/Button.react":63,"./Components/Divider.react":65,"./Components/Modal.react":68,"react":132}],80:[function(require,module,exports){
 arguments[4][62][0].apply(exports,arguments)
-},{"dup":62,"react":131}],81:[function(require,module,exports){
+},{"./Button.react":81,"dup":62,"react":132}],81:[function(require,module,exports){
 arguments[4][63][0].apply(exports,arguments)
-},{"dup":63,"react":131}],82:[function(require,module,exports){
+},{"dup":63,"react":132}],82:[function(require,module,exports){
 arguments[4][64][0].apply(exports,arguments)
-},{"dup":64,"react":131}],83:[function(require,module,exports){
+},{"dup":64,"react":132}],83:[function(require,module,exports){
 arguments[4][65][0].apply(exports,arguments)
-},{"dup":65,"react":131}],84:[function(require,module,exports){
+},{"dup":65,"react":132}],84:[function(require,module,exports){
 arguments[4][66][0].apply(exports,arguments)
-},{"dup":66,"react":131}],85:[function(require,module,exports){
+},{"dup":66,"react":132}],85:[function(require,module,exports){
 arguments[4][67][0].apply(exports,arguments)
-},{"../../utils/helpers":90,"./Button.react":80,"dup":67,"react":131}],86:[function(require,module,exports){
+},{"dup":67,"react":132}],86:[function(require,module,exports){
 arguments[4][68][0].apply(exports,arguments)
-},{"dup":68,"react":131}],87:[function(require,module,exports){
+},{"../../utils/helpers":91,"./Button.react":81,"dup":68,"react":132}],87:[function(require,module,exports){
+arguments[4][69][0].apply(exports,arguments)
+},{"dup":69,"react":132}],88:[function(require,module,exports){
 'use strict';
 
 var React = require('react');
@@ -12831,9 +12938,9 @@ var quitGameModal = function quitGameModal(dispatch) {
 };
 
 module.exports = QuitButton;
-},{"../../utils/helpers":90,"./Button.react":80,"./Modal.react":85,"react":131}],88:[function(require,module,exports){
-arguments[4][70][0].apply(exports,arguments)
-},{"./NumberField.react":86,"dup":70,"react":131}],89:[function(require,module,exports){
+},{"../../utils/helpers":91,"./Button.react":81,"./Modal.react":86,"react":132}],89:[function(require,module,exports){
+arguments[4][71][0].apply(exports,arguments)
+},{"./NumberField.react":87,"dup":71,"react":132}],90:[function(require,module,exports){
 'use strict';
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
@@ -12969,7 +13076,7 @@ module.exports = {
   getEntityPositions: getEntityPositions,
   entityInsideGrid: entityInsideGrid
 };
-},{"../config":1,"../utils/helpers":90,"../utils/vectors":93}],90:[function(require,module,exports){
+},{"../config":1,"../utils/helpers":91,"../utils/vectors":94}],91:[function(require,module,exports){
 'use strict';
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
@@ -13152,7 +13259,7 @@ module.exports = {
   forEachObj: forEachObj,
   filterObj: filterObj
 };
-},{"./vectors":93}],91:[function(require,module,exports){
+},{"./vectors":94}],92:[function(require,module,exports){
 'use strict';
 
 var _require = require('../utils/stochastic'),
@@ -13277,7 +13384,7 @@ var clearOutPocket = function clearOutPocket(level, rect) {
 };
 
 module.exports = { getProceduralLevel: getProceduralLevel };
-},{"../config":1,"../utils/stochastic":92}],92:[function(require,module,exports){
+},{"../config":1,"../utils/stochastic":93}],93:[function(require,module,exports){
 "use strict";
 
 var floor = Math.floor,
@@ -13332,7 +13439,7 @@ module.exports = {
   oneOf: oneOf,
   weightedOneOf: weightedOneOf
 };
-},{}],93:[function(require,module,exports){
+},{}],94:[function(require,module,exports){
 "use strict";
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -13531,7 +13638,7 @@ module.exports = {
   rotate: rotate,
   abs: abs
 };
-},{}],94:[function(require,module,exports){
+},{}],95:[function(require,module,exports){
 function _defineProperty(obj, key, value) {
   if (key in obj) {
     Object.defineProperty(obj, key, {
@@ -13549,7 +13656,7 @@ function _defineProperty(obj, key, value) {
 
 module.exports = _defineProperty;
 module.exports["default"] = module.exports, module.exports.__esModule = true;
-},{}],95:[function(require,module,exports){
+},{}],96:[function(require,module,exports){
 var defineProperty = require("./defineProperty.js");
 
 function ownKeys(object, enumerableOnly) {
@@ -13592,9 +13699,9 @@ function _objectSpread2(target) {
 
 module.exports = _objectSpread2;
 module.exports["default"] = module.exports, module.exports.__esModule = true;
-},{"./defineProperty.js":94}],96:[function(require,module,exports){
+},{"./defineProperty.js":95}],97:[function(require,module,exports){
 module.exports = require('./lib/axios');
-},{"./lib/axios":98}],97:[function(require,module,exports){
+},{"./lib/axios":99}],98:[function(require,module,exports){
 'use strict';
 
 var utils = require('./../utils');
@@ -13808,7 +13915,7 @@ module.exports = function xhrAdapter(config) {
   });
 };
 
-},{"../cancel/Cancel":99,"../core/buildFullPath":104,"../core/createError":105,"../defaults":111,"./../core/settle":109,"./../helpers/buildURL":114,"./../helpers/cookies":116,"./../helpers/isURLSameOrigin":119,"./../helpers/parseHeaders":121,"./../utils":124}],98:[function(require,module,exports){
+},{"../cancel/Cancel":100,"../core/buildFullPath":105,"../core/createError":106,"../defaults":112,"./../core/settle":110,"./../helpers/buildURL":115,"./../helpers/cookies":117,"./../helpers/isURLSameOrigin":120,"./../helpers/parseHeaders":122,"./../utils":125}],99:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -13867,7 +13974,7 @@ module.exports = axios;
 // Allow use of default import syntax in TypeScript
 module.exports.default = axios;
 
-},{"./cancel/Cancel":99,"./cancel/CancelToken":100,"./cancel/isCancel":101,"./core/Axios":102,"./core/mergeConfig":108,"./defaults":111,"./env/data":112,"./helpers/bind":113,"./helpers/isAxiosError":118,"./helpers/spread":122,"./utils":124}],99:[function(require,module,exports){
+},{"./cancel/Cancel":100,"./cancel/CancelToken":101,"./cancel/isCancel":102,"./core/Axios":103,"./core/mergeConfig":109,"./defaults":112,"./env/data":113,"./helpers/bind":114,"./helpers/isAxiosError":119,"./helpers/spread":123,"./utils":125}],100:[function(require,module,exports){
 'use strict';
 
 /**
@@ -13888,7 +13995,7 @@ Cancel.prototype.__CANCEL__ = true;
 
 module.exports = Cancel;
 
-},{}],100:[function(require,module,exports){
+},{}],101:[function(require,module,exports){
 'use strict';
 
 var Cancel = require('./Cancel');
@@ -14009,14 +14116,14 @@ CancelToken.source = function source() {
 
 module.exports = CancelToken;
 
-},{"./Cancel":99}],101:[function(require,module,exports){
+},{"./Cancel":100}],102:[function(require,module,exports){
 'use strict';
 
 module.exports = function isCancel(value) {
   return !!(value && value.__CANCEL__);
 };
 
-},{}],102:[function(require,module,exports){
+},{}],103:[function(require,module,exports){
 'use strict';
 
 var utils = require('./../utils');
@@ -14166,7 +14273,7 @@ utils.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
 
 module.exports = Axios;
 
-},{"../helpers/buildURL":114,"../helpers/validator":123,"./../utils":124,"./InterceptorManager":103,"./dispatchRequest":106,"./mergeConfig":108}],103:[function(require,module,exports){
+},{"../helpers/buildURL":115,"../helpers/validator":124,"./../utils":125,"./InterceptorManager":104,"./dispatchRequest":107,"./mergeConfig":109}],104:[function(require,module,exports){
 'use strict';
 
 var utils = require('./../utils');
@@ -14222,7 +14329,7 @@ InterceptorManager.prototype.forEach = function forEach(fn) {
 
 module.exports = InterceptorManager;
 
-},{"./../utils":124}],104:[function(require,module,exports){
+},{"./../utils":125}],105:[function(require,module,exports){
 'use strict';
 
 var isAbsoluteURL = require('../helpers/isAbsoluteURL');
@@ -14244,7 +14351,7 @@ module.exports = function buildFullPath(baseURL, requestedURL) {
   return requestedURL;
 };
 
-},{"../helpers/combineURLs":115,"../helpers/isAbsoluteURL":117}],105:[function(require,module,exports){
+},{"../helpers/combineURLs":116,"../helpers/isAbsoluteURL":118}],106:[function(require,module,exports){
 'use strict';
 
 var enhanceError = require('./enhanceError');
@@ -14264,7 +14371,7 @@ module.exports = function createError(message, config, code, request, response) 
   return enhanceError(error, config, code, request, response);
 };
 
-},{"./enhanceError":107}],106:[function(require,module,exports){
+},{"./enhanceError":108}],107:[function(require,module,exports){
 'use strict';
 
 var utils = require('./../utils');
@@ -14353,7 +14460,7 @@ module.exports = function dispatchRequest(config) {
   });
 };
 
-},{"../cancel/Cancel":99,"../cancel/isCancel":101,"../defaults":111,"./../utils":124,"./transformData":110}],107:[function(require,module,exports){
+},{"../cancel/Cancel":100,"../cancel/isCancel":102,"../defaults":112,"./../utils":125,"./transformData":111}],108:[function(require,module,exports){
 'use strict';
 
 /**
@@ -14398,7 +14505,7 @@ module.exports = function enhanceError(error, config, code, request, response) {
   return error;
 };
 
-},{}],108:[function(require,module,exports){
+},{}],109:[function(require,module,exports){
 'use strict';
 
 var utils = require('../utils');
@@ -14499,7 +14606,7 @@ module.exports = function mergeConfig(config1, config2) {
   return config;
 };
 
-},{"../utils":124}],109:[function(require,module,exports){
+},{"../utils":125}],110:[function(require,module,exports){
 'use strict';
 
 var createError = require('./createError');
@@ -14526,7 +14633,7 @@ module.exports = function settle(resolve, reject, response) {
   }
 };
 
-},{"./createError":105}],110:[function(require,module,exports){
+},{"./createError":106}],111:[function(require,module,exports){
 'use strict';
 
 var utils = require('./../utils');
@@ -14550,7 +14657,7 @@ module.exports = function transformData(data, headers, fns) {
   return data;
 };
 
-},{"./../defaults":111,"./../utils":124}],111:[function(require,module,exports){
+},{"./../defaults":112,"./../utils":125}],112:[function(require,module,exports){
 (function (process){(function (){
 'use strict';
 
@@ -14688,11 +14795,11 @@ utils.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
 module.exports = defaults;
 
 }).call(this)}).call(this,require('_process'))
-},{"./adapters/http":97,"./adapters/xhr":97,"./core/enhanceError":107,"./helpers/normalizeHeaderName":120,"./utils":124,"_process":139}],112:[function(require,module,exports){
+},{"./adapters/http":98,"./adapters/xhr":98,"./core/enhanceError":108,"./helpers/normalizeHeaderName":121,"./utils":125,"_process":140}],113:[function(require,module,exports){
 module.exports = {
   "version": "0.24.0"
 };
-},{}],113:[function(require,module,exports){
+},{}],114:[function(require,module,exports){
 'use strict';
 
 module.exports = function bind(fn, thisArg) {
@@ -14705,7 +14812,7 @@ module.exports = function bind(fn, thisArg) {
   };
 };
 
-},{}],114:[function(require,module,exports){
+},{}],115:[function(require,module,exports){
 'use strict';
 
 var utils = require('./../utils');
@@ -14777,7 +14884,7 @@ module.exports = function buildURL(url, params, paramsSerializer) {
   return url;
 };
 
-},{"./../utils":124}],115:[function(require,module,exports){
+},{"./../utils":125}],116:[function(require,module,exports){
 'use strict';
 
 /**
@@ -14793,7 +14900,7 @@ module.exports = function combineURLs(baseURL, relativeURL) {
     : baseURL;
 };
 
-},{}],116:[function(require,module,exports){
+},{}],117:[function(require,module,exports){
 'use strict';
 
 var utils = require('./../utils');
@@ -14848,7 +14955,7 @@ module.exports = (
     })()
 );
 
-},{"./../utils":124}],117:[function(require,module,exports){
+},{"./../utils":125}],118:[function(require,module,exports){
 'use strict';
 
 /**
@@ -14864,7 +14971,7 @@ module.exports = function isAbsoluteURL(url) {
   return /^([a-z][a-z\d\+\-\.]*:)?\/\//i.test(url);
 };
 
-},{}],118:[function(require,module,exports){
+},{}],119:[function(require,module,exports){
 'use strict';
 
 /**
@@ -14877,7 +14984,7 @@ module.exports = function isAxiosError(payload) {
   return (typeof payload === 'object') && (payload.isAxiosError === true);
 };
 
-},{}],119:[function(require,module,exports){
+},{}],120:[function(require,module,exports){
 'use strict';
 
 var utils = require('./../utils');
@@ -14947,7 +15054,7 @@ module.exports = (
     })()
 );
 
-},{"./../utils":124}],120:[function(require,module,exports){
+},{"./../utils":125}],121:[function(require,module,exports){
 'use strict';
 
 var utils = require('../utils');
@@ -14961,7 +15068,7 @@ module.exports = function normalizeHeaderName(headers, normalizedName) {
   });
 };
 
-},{"../utils":124}],121:[function(require,module,exports){
+},{"../utils":125}],122:[function(require,module,exports){
 'use strict';
 
 var utils = require('./../utils');
@@ -15016,7 +15123,7 @@ module.exports = function parseHeaders(headers) {
   return parsed;
 };
 
-},{"./../utils":124}],122:[function(require,module,exports){
+},{"./../utils":125}],123:[function(require,module,exports){
 'use strict';
 
 /**
@@ -15045,7 +15152,7 @@ module.exports = function spread(callback) {
   };
 };
 
-},{}],123:[function(require,module,exports){
+},{}],124:[function(require,module,exports){
 'use strict';
 
 var VERSION = require('../env/data').version;
@@ -15129,7 +15236,7 @@ module.exports = {
   validators: validators
 };
 
-},{"../env/data":112}],124:[function(require,module,exports){
+},{"../env/data":113}],125:[function(require,module,exports){
 'use strict';
 
 var bind = require('./helpers/bind');
@@ -15480,7 +15587,7 @@ module.exports = {
   stripBOM: stripBOM
 };
 
-},{"./helpers/bind":113}],125:[function(require,module,exports){
+},{"./helpers/bind":114}],126:[function(require,module,exports){
 /*
 object-assign
 (c) Sindre Sorhus
@@ -15572,7 +15679,7 @@ module.exports = shouldUseNative() ? Object.assign : function (target, source) {
 	return to;
 };
 
-},{}],126:[function(require,module,exports){
+},{}],127:[function(require,module,exports){
 (function (process){(function (){
 /** @license React v17.0.2
  * react-dom.development.js
@@ -41838,7 +41945,7 @@ exports.version = ReactVersion;
 }
 
 }).call(this)}).call(this,require('_process'))
-},{"_process":139,"object-assign":125,"react":131,"scheduler":137,"scheduler/tracing":138}],127:[function(require,module,exports){
+},{"_process":140,"object-assign":126,"react":132,"scheduler":138,"scheduler/tracing":139}],128:[function(require,module,exports){
 /** @license React v17.0.2
  * react-dom.production.min.js
  *
@@ -42137,7 +42244,7 @@ exports.findDOMNode=function(a){if(null==a)return null;if(1===a.nodeType)return 
 exports.render=function(a,b,c){if(!rk(b))throw Error(y(200));return tk(null,a,b,!1,c)};exports.unmountComponentAtNode=function(a){if(!rk(a))throw Error(y(40));return a._reactRootContainer?(Xj(function(){tk(null,null,a,!1,function(){a._reactRootContainer=null;a[ff]=null})}),!0):!1};exports.unstable_batchedUpdates=Wj;exports.unstable_createPortal=function(a,b){return uk(a,b,2<arguments.length&&void 0!==arguments[2]?arguments[2]:null)};
 exports.unstable_renderSubtreeIntoContainer=function(a,b,c,d){if(!rk(c))throw Error(y(200));if(null==a||void 0===a._reactInternals)throw Error(y(38));return tk(a,b,c,!1,d)};exports.version="17.0.2";
 
-},{"object-assign":125,"react":131,"scheduler":137}],128:[function(require,module,exports){
+},{"object-assign":126,"react":132,"scheduler":138}],129:[function(require,module,exports){
 (function (process){(function (){
 'use strict';
 
@@ -42179,7 +42286,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 }).call(this)}).call(this,require('_process'))
-},{"./cjs/react-dom.development.js":126,"./cjs/react-dom.production.min.js":127,"_process":139}],129:[function(require,module,exports){
+},{"./cjs/react-dom.development.js":127,"./cjs/react-dom.production.min.js":128,"_process":140}],130:[function(require,module,exports){
 (function (process){(function (){
 /** @license React v17.0.2
  * react.development.js
@@ -44516,7 +44623,7 @@ exports.version = ReactVersion;
 }
 
 }).call(this)}).call(this,require('_process'))
-},{"_process":139,"object-assign":125}],130:[function(require,module,exports){
+},{"_process":140,"object-assign":126}],131:[function(require,module,exports){
 /** @license React v17.0.2
  * react.production.min.js
  *
@@ -44541,7 +44648,7 @@ key:d,ref:k,props:e,_owner:h}};exports.createContext=function(a,b){void 0===b&&(
 exports.lazy=function(a){return{$$typeof:v,_payload:{_status:-1,_result:a},_init:Q}};exports.memo=function(a,b){return{$$typeof:u,type:a,compare:void 0===b?null:b}};exports.useCallback=function(a,b){return S().useCallback(a,b)};exports.useContext=function(a,b){return S().useContext(a,b)};exports.useDebugValue=function(){};exports.useEffect=function(a,b){return S().useEffect(a,b)};exports.useImperativeHandle=function(a,b,c){return S().useImperativeHandle(a,b,c)};
 exports.useLayoutEffect=function(a,b){return S().useLayoutEffect(a,b)};exports.useMemo=function(a,b){return S().useMemo(a,b)};exports.useReducer=function(a,b,c){return S().useReducer(a,b,c)};exports.useRef=function(a){return S().useRef(a)};exports.useState=function(a){return S().useState(a)};exports.version="17.0.2";
 
-},{"object-assign":125}],131:[function(require,module,exports){
+},{"object-assign":126}],132:[function(require,module,exports){
 (function (process){(function (){
 'use strict';
 
@@ -44552,7 +44659,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 }).call(this)}).call(this,require('_process'))
-},{"./cjs/react.development.js":129,"./cjs/react.production.min.js":130,"_process":139}],132:[function(require,module,exports){
+},{"./cjs/react.development.js":130,"./cjs/react.production.min.js":131,"_process":140}],133:[function(require,module,exports){
 (function (process){(function (){
 'use strict';
 
@@ -45286,7 +45393,7 @@ exports.createStore = createStore;
 exports.legacy_createStore = legacy_createStore;
 
 }).call(this)}).call(this,require('_process'))
-},{"@babel/runtime/helpers/objectSpread2":95,"_process":139}],133:[function(require,module,exports){
+},{"@babel/runtime/helpers/objectSpread2":96,"_process":140}],134:[function(require,module,exports){
 (function (process){(function (){
 /** @license React v0.20.2
  * scheduler-tracing.development.js
@@ -45637,7 +45744,7 @@ exports.unstable_wrap = unstable_wrap;
 }
 
 }).call(this)}).call(this,require('_process'))
-},{"_process":139}],134:[function(require,module,exports){
+},{"_process":140}],135:[function(require,module,exports){
 /** @license React v0.20.2
  * scheduler-tracing.production.min.js
  *
@@ -45648,7 +45755,7 @@ exports.unstable_wrap = unstable_wrap;
  */
 'use strict';var b=0;exports.__interactionsRef=null;exports.__subscriberRef=null;exports.unstable_clear=function(a){return a()};exports.unstable_getCurrent=function(){return null};exports.unstable_getThreadID=function(){return++b};exports.unstable_subscribe=function(){};exports.unstable_trace=function(a,d,c){return c()};exports.unstable_unsubscribe=function(){};exports.unstable_wrap=function(a){return a};
 
-},{}],135:[function(require,module,exports){
+},{}],136:[function(require,module,exports){
 (function (process){(function (){
 /** @license React v0.20.2
  * scheduler.development.js
@@ -46298,7 +46405,7 @@ exports.unstable_wrapCallback = unstable_wrapCallback;
 }
 
 }).call(this)}).call(this,require('_process'))
-},{"_process":139}],136:[function(require,module,exports){
+},{"_process":140}],137:[function(require,module,exports){
 /** @license React v0.20.2
  * scheduler.production.min.js
  *
@@ -46320,7 +46427,7 @@ exports.unstable_next=function(a){switch(P){case 1:case 2:case 3:var b=3;break;d
 exports.unstable_scheduleCallback=function(a,b,c){var d=exports.unstable_now();"object"===typeof c&&null!==c?(c=c.delay,c="number"===typeof c&&0<c?d+c:d):c=d;switch(a){case 1:var e=-1;break;case 2:e=250;break;case 5:e=1073741823;break;case 4:e=1E4;break;default:e=5E3}e=c+e;a={id:N++,callback:b,priorityLevel:a,startTime:c,expirationTime:e,sortIndex:-1};c>d?(a.sortIndex=c,H(M,a),null===J(L)&&a===J(M)&&(S?h():S=!0,g(U,c-d))):(a.sortIndex=e,H(L,a),R||Q||(R=!0,f(V)));return a};
 exports.unstable_wrapCallback=function(a){var b=P;return function(){var c=P;P=b;try{return a.apply(this,arguments)}finally{P=c}}};
 
-},{}],137:[function(require,module,exports){
+},{}],138:[function(require,module,exports){
 (function (process){(function (){
 'use strict';
 
@@ -46331,7 +46438,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 }).call(this)}).call(this,require('_process'))
-},{"./cjs/scheduler.development.js":135,"./cjs/scheduler.production.min.js":136,"_process":139}],138:[function(require,module,exports){
+},{"./cjs/scheduler.development.js":136,"./cjs/scheduler.production.min.js":137,"_process":140}],139:[function(require,module,exports){
 (function (process){(function (){
 'use strict';
 
@@ -46342,7 +46449,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 }).call(this)}).call(this,require('_process'))
-},{"./cjs/scheduler-tracing.development.js":133,"./cjs/scheduler-tracing.production.min.js":134,"_process":139}],139:[function(require,module,exports){
+},{"./cjs/scheduler-tracing.development.js":134,"./cjs/scheduler-tracing.production.min.js":135,"_process":140}],140:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 

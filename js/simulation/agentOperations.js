@@ -48,7 +48,7 @@ const agentPickup = (
   if (!config.pickupTypes.includes(entity.type)) return game;
 
   // support picking up more than 1 thing
-  if (agent.holdingIDs.length >= config.maxHold) return game;
+  // if (agent.holdingIDs.length >= config.maxHold) return game;
 
   // update task need if agent not doing go_to_dirt picks up marked dirt
   // if (

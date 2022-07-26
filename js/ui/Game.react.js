@@ -11,6 +11,7 @@ const {config, pheromones} = require('../config');
 const {fillPheromone} = require('../simulation/pheromones');
 const {initMouseControlsSystem} = require('../systems/mouseControlsSystem');
 const {initGameOverSystem} = require('../systems/gameOverSystem');
+const {initFoodSpawnSystem} = require('../systems/foodSpawnSystem');
 const {initSpriteSheetSystem} = require('../systems/spriteSheetSystem');
 const {initRainSystem} = require('../systems/rainSystem');
 const {initMissileAttackSystem} = require('../systems/missileAttackSystem');
@@ -21,8 +22,8 @@ const {
 const ExperimentalSidebar = require('./ExperimentalSidebar.react');
 const {handleCollect, handlePlace} = require('../thunks/mouseInteractions');
 const {useEffect, useState, useMemo, Component, memo} = React;
-const {add, subtract} = require('../utils/vectors');
-const {lookupInGrid} = require('../utils/gridHelpers');
+const {equals, add, subtract} = require('../utils/vectors');
+const {lookupInGrid, getPheromonesInCell} = require('../utils/gridHelpers');
 const {clamp, isMobile} = require('../utils/helpers');
 const {
   getControlledEntityInteraction,
@@ -61,6 +62,7 @@ function Game(props: Props): React.Node {
     initKeyboardControlsSystem(store);
     // initSpriteSheetSystem(store);
     initGameOverSystem(store);
+    initFoodSpawnSystem(store);
     initPheromoneWorkerSystem(store);
     registerHotkeys(dispatch);
     initMouseControlsSystem(store, configureMouseHandlers(state.game));
@@ -212,14 +214,58 @@ function registerHotkeys(dispatch) {
 function configureMouseHandlers(game) {
   const handlers = {
     mouseMove: (state, dispatch, gridPos) => {
-      if (state.game.mouse.isLeftDown) {
-        dispatch({type: 'FILL_PHEROMONE',
-          gridPos,
-          pheromoneType: 'FOLLOW',
-          playerID: state.game.playerID,
-          quantity: pheromones.FOLLOW.quantity,
-        });
+      const game = state.game;
+      if (game.mouse.isLeftDown) {
+        const prevPos = game.prevInteractPos;
+        // const prevPos = game.mouse.downPos;
+        if (prevPos) {
+          let quantity =
+            getPheromonesInCell(game.grid, prevPos, game.playerID).FOLLOW ||
+            pheromones.FOLLOW.quantity * 0.75;
+          let pos = prevPos;
+            dispatch({type: 'FILL_PHEROMONE',
+              gridPos: pos,
+              pheromoneType: 'FOLLOW',
+              playerID: state.game.playerID,
+              quantity,
+            });
+          while (!equals(pos, gridPos)) {
+            quantity += 1;
+            const diff = subtract(pos, gridPos);
+            pos = {
+              x: diff.x == 0 ? pos.x : pos.x - diff.x / Math.abs(diff.x),
+              y: diff.y == 0 ? pos.y : pos.y - diff.y / Math.abs(diff.y),
+            };
+            dispatch({type: 'FILL_PHEROMONE',
+              gridPos: pos,
+              pheromoneType: 'FOLLOW',
+              playerID: state.game.playerID,
+              quantity,
+            });
+          }
+          dispatch({type: 'SET',
+            property: 'prevInteractPos',
+            value: gridPos,
+          });
+        } else {
+          dispatch({type: 'FILL_PHEROMONE',
+            gridPos,
+            pheromoneType: 'FOLLOW',
+            playerID: state.game.playerID,
+            quantity: pheromones.FOLLOW.quantity * 0.75,
+          });
+          dispatch({type: 'SET',
+            property: 'prevInteractPos',
+            value: gridPos,
+          });
+        }
       }
+    },
+    leftUp: (state, dispatch, gridPos) => {
+      dispatch({type: 'SET',
+        property: 'prevInteractPos',
+        value: null,
+      });
     },
     scroll: (state, dispatch, zoom) => {
       dispatch({type: 'INCREMENT_ZOOM', zoom});

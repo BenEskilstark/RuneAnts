@@ -105,6 +105,7 @@ const doTick = (game: Game): Game => {
 
   // game/frame timing
   game.timeSinceLastTick = curTickTime - game.prevTickTime;
+  game.timeSinceLastFoodSpawn += game.timeSinceLastTick;
 
   // these are the ECS "systems"
   keepControlledMoving(game);
@@ -434,6 +435,7 @@ const updateBases = (game): void => {
       ) {
         removeEntity(game, ant.holding);
         ant.holding = null;
+        ant.holdingIDs = [];
 
         addEntity(game, Entities.ANT.make(game, base.position, base.playerID));
       }

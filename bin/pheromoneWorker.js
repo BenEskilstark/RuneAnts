@@ -18,7 +18,10 @@ var config = {
   audioFiles: [{ path: 'audio/Song Oct. 9.wav', type: 'wav' }],
 
   dispersingPheromoneUpdateRate: 6,
-  gravity: -100
+  gravity: -100,
+
+  foodSpawnInterval: 1000 * 5,
+  minFood: 50
 
 };
 

@@ -199,6 +199,7 @@ const rootReducer = (state: State, action: Action): State => {
         state.editor.index += 1;
       }
     case 'SET':
+    case 'SPAWN_FOOD':
     case 'UPDATE_ALL_PHEROMONES':
     case 'SET_GAME_OVER':
     case 'CREATE_ENTITY':

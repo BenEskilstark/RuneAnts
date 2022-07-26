@@ -66,6 +66,7 @@ const initBaseState = (
     prevTickTime: 0,
     totalGameTime: 0,
     timeSinceLastTick: 0,
+    timeSinceLastFoodSpawn: 0,
 
     pheromoneDisplay: {
       COLONY: false,
@@ -83,6 +84,7 @@ const initBaseState = (
       OIL: true,
       SULPHUR_DIOXIDE: true,
     },
+    showPheromoneValues: false,
     maxMinimap: false,
 
     sprites: {},
