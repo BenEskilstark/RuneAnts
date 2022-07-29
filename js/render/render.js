@@ -234,8 +234,29 @@ const renderView = (canvas, ctx2d, game, dims, isMini): void => {
     ctx.strokeRect(rect.position.x, rect.position.y, rect.width, rect.height);
   }
 
+  // render score
+  renderScore(ctx, game.score, dims);
+
+
   ctx.restore();
 }
+
+const renderScore = (ctx, score, dims) => {
+  const text = `Score: ${score}`
+  const fontSize = Math.min(dims.viewWidth, dims.viewHeight) / 10
+
+  ctx.font = `${fontSize}px Arial`
+  ctx.fillStyle = "#aaa"
+
+  const { width } = ctx.measureText(text)
+
+  ctx.fillText(
+    text,
+    dims.viewWidth / 2 - width / 2,
+    4,
+  )
+}
+
 
 const refreshStaleImage = (game, dims): void => {
   if (!game.viewImage.isStale && !game.viewImage.allStale) return;

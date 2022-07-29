@@ -459,7 +459,8 @@ var _require3 = require('../render/renderAgent'),
     renderAgent = _require3.renderAgent;
 
 var config = {
-  hp: 60,
+  maxHP: 10, // hack to prevent circular reference with render Agent
+  hp: 10,
   damage: 1,
   width: 1,
   height: 1,
@@ -2099,9 +2100,9 @@ var renderAgent = function renderAgent(ctx, game, agent, spriteRenderFn) {
   ctx.translate(-width / 2, -height / 2);
 
   // render hp bar
-  // if (Math.ceil(agent.hp) < config[agent.playerID][agent.caste].hp) {
-  //   renderHealthBar(ctx, agent, config[agent.playerID][agent.caste].hp);
-  // }
+  if (agent.maxHP != null && Math.ceil(agent.hp) < agent.maxHP) {
+    renderHealthBar(ctx, agent, agent.maxHP);
+  }
 
   ctx.restore();
 

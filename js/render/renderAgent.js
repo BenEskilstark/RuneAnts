@@ -34,9 +34,9 @@ const renderAgent = (ctx, game, agent: Agent, spriteRenderFn: () => {}): void =>
   ctx.translate(-width / 2, -height / 2);
 
   // render hp bar
-  // if (Math.ceil(agent.hp) < config[agent.playerID][agent.caste].hp) {
-  //   renderHealthBar(ctx, agent, config[agent.playerID][agent.caste].hp);
-  // }
+  if (agent.maxHP != null && Math.ceil(agent.hp) < agent.maxHP) {
+    renderHealthBar(ctx, agent, agent.maxHP);
+  }
 
   ctx.restore();
 

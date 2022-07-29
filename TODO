@@ -1,19 +1,11 @@
 
-
-- - - - - - - ANTS - - - - - - -
-  - ant behavior
-    - collecting food:
-      - may recruit too readily to dead trails
-    - fight/grapple
-      - damage never being dealt
-      - fix sprite ordering
-      - alert pheromone inconsistent (and probably shouldn't be rendered)
-  - scenario:
-    - add score
-      - enemies killed, ants spawned?
+- - - - - - - FIX - - - - - - - -
+  - alert pheromone inconsistent (and probably shouldn't be rendered)
+    - not disappearing after death
 
 
 - - - - - POLISH - - - - -
+  - Score based on food, enemies killed?
   - Remove main menu
     - hotkey for opening level editor
   - Add music from Antocracy
@@ -22,26 +14,28 @@
   - favicon + name
 
 
+- - - - - - PLAY TESTING - - - - - - -
+  - collecting food:
+    - may recruit too readily to dead trails
+  - can't redirect retrieving ants with follow
+
+
 - - - - - - RUNE INTEGRATION - - - - -
   - Rune script include
   - Rune api calls
   - game over when ants are all killed or something?
 
 
-- - - - - - - FIX - - - - - - - -
-  - pheromoneWorker appears to not update after reset in level editor
-  - allow switching between level editor modes and mouse mode
-
-
 - - - - GAME MECHANICS - - - - -
   - Spider, beetle, scorpion instead of plain food, at least after a bit
-  - Score based on food, enemies killed?
   - Enemies spawn faster but you're stronger?
   - Briefly control a scorpion or something?
   - Balance towards losing eventually?
 
 
 - - - - - - REFACTOR - - - - - -
+  - pheromoneWorker appears to not update after reset in level editor
+  - allow switching between level editor modes and mouse mode
   - clean up config
   - Use UI components package
   - Use utils components package

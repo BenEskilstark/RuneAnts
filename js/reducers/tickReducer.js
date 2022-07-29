@@ -111,6 +111,7 @@ const doTick = (game: Game): Game => {
   keepControlledMoving(game);
   updateActors(game);
   updateAgents(game);
+  updateAnts(game);
   updateBases(game);
   updateTiledSprites(game);
   updateViewPos(game, false /*don't clamp to world*/);
@@ -420,6 +421,21 @@ const stepAction = (
 // Misc.
 //////////////////////////////////////////////////////////////////////////
 
+const updateAnts = (game): void => {
+  if (game.time % 10 == 0) {
+    // heal ants if they aren't surrounded
+    for (const id of game.ANT) {
+      const ant = game.entities[id];
+      // with certain probability, let damage from two attackers go through
+      if (ant.hp - Math.floor(ant.hp) < 0.4 && Math.random() < 0.1) {
+        ant.hp = Math.floor(ant.hp);
+        continue;
+      }
+      ant.hp = Math.ceil(ant.hp);
+    }
+  }
+};
+
 // check for ants on top of the base with food,
 // if there is, then delete the food and spawn an ant
 const updateBases = (game): void => {
@@ -436,6 +452,10 @@ const updateBases = (game): void => {
         removeEntity(game, ant.holding);
         ant.holding = null;
         ant.holdingIDs = [];
+
+        if (base.playerID == game.playerID) {
+          game.score += 1;
+        }
 
         addEntity(game, Entities.ANT.make(game, base.position, base.playerID));
       }

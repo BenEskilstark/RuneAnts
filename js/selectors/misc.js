@@ -187,8 +187,6 @@ const getManningAction = (game: Game): EntityAction => {
   return {entity, entityAction};
 };
 
-
-
 module.exports = {
   onScreen,
   getPositionsInFront,

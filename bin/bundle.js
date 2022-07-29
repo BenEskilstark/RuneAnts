@@ -459,7 +459,8 @@ var _require3 = require('../render/renderAgent'),
     renderAgent = _require3.renderAgent;
 
 var config = {
-  hp: 60,
+  maxHP: 10, // hack to prevent circular reference with render Agent
+  hp: 10,
   damage: 1,
   width: 1,
   height: 1,
@@ -2589,6 +2590,7 @@ var doTick = function doTick(game) {
   keepControlledMoving(game);
   updateActors(game);
   updateAgents(game);
+  updateAnts(game);
   updateBases(game);
   updateTiledSprites(game);
   updateViewPos(game, false /*don't clamp to world*/);
@@ -2884,16 +2886,52 @@ var stepAction = function stepAction(game, entity, decisionFunction) {
 // Misc.
 //////////////////////////////////////////////////////////////////////////
 
+var updateAnts = function updateAnts(game) {
+  if (game.time % 10 == 0) {
+    // heal ants if they aren't surrounded
+    var _iteratorNormalCompletion2 = true;
+    var _didIteratorError2 = false;
+    var _iteratorError2 = undefined;
+
+    try {
+      for (var _iterator2 = game.ANT[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+        var id = _step2.value;
+
+        var ant = game.entities[id];
+        // with certain probability, let damage from two attackers go through
+        if (ant.hp - Math.floor(ant.hp) < 0.4 && Math.random() < 0.1) {
+          ant.hp = Math.floor(ant.hp);
+          continue;
+        }
+        ant.hp = Math.ceil(ant.hp);
+      }
+    } catch (err) {
+      _didIteratorError2 = true;
+      _iteratorError2 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion2 && _iterator2.return) {
+          _iterator2.return();
+        }
+      } finally {
+        if (_didIteratorError2) {
+          throw _iteratorError2;
+        }
+      }
+    }
+  }
+};
+
 // check for ants on top of the base with food,
 // if there is, then delete the food and spawn an ant
 var updateBases = function updateBases(game) {
-  var _iteratorNormalCompletion2 = true;
-  var _didIteratorError2 = false;
-  var _iteratorError2 = undefined;
+  var _iteratorNormalCompletion3 = true;
+  var _didIteratorError3 = false;
+  var _iteratorError3 = undefined;
 
   try {
     var _loop = function _loop() {
-      var id = _step2.value;
+      var id = _step3.value;
 
       var base = game.entities[id];
       var yourAnts = game.ANT.map(function (id) {
@@ -2901,80 +2939,84 @@ var updateBases = function updateBases(game) {
       }).filter(function (ant) {
         return ant.playerID == base.playerID;
       });
-      var _iteratorNormalCompletion3 = true;
-      var _didIteratorError3 = false;
-      var _iteratorError3 = undefined;
+      var _iteratorNormalCompletion4 = true;
+      var _didIteratorError4 = false;
+      var _iteratorError4 = undefined;
 
       try {
-        for (var _iterator3 = yourAnts[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-          var ant = _step3.value;
+        for (var _iterator4 = yourAnts[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+          var ant = _step4.value;
 
           if (ant.holding != null && ant.holding.type == 'FOOD' && equals(ant.position, base.position)) {
             removeEntity(game, ant.holding);
             ant.holding = null;
             ant.holdingIDs = [];
 
+            if (base.playerID == game.playerID) {
+              game.score += 1;
+            }
+
             addEntity(game, Entities.ANT.make(game, base.position, base.playerID));
           }
         }
       } catch (err) {
-        _didIteratorError3 = true;
-        _iteratorError3 = err;
+        _didIteratorError4 = true;
+        _iteratorError4 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion3 && _iterator3.return) {
-            _iterator3.return();
+          if (!_iteratorNormalCompletion4 && _iterator4.return) {
+            _iterator4.return();
           }
         } finally {
-          if (_didIteratorError3) {
-            throw _iteratorError3;
+          if (_didIteratorError4) {
+            throw _iteratorError4;
           }
         }
       }
     };
 
-    for (var _iterator2 = game.BASE[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+    for (var _iterator3 = game.BASE[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
       _loop();
     }
   } catch (err) {
-    _didIteratorError2 = true;
-    _iteratorError2 = err;
+    _didIteratorError3 = true;
+    _iteratorError3 = err;
   } finally {
     try {
-      if (!_iteratorNormalCompletion2 && _iterator2.return) {
-        _iterator2.return();
+      if (!_iteratorNormalCompletion3 && _iterator3.return) {
+        _iterator3.return();
       }
     } finally {
-      if (_didIteratorError2) {
-        throw _iteratorError2;
+      if (_didIteratorError3) {
+        throw _iteratorError3;
       }
     }
   }
 };
 
 var updateTiledSprites = function updateTiledSprites(game) {
-  var _iteratorNormalCompletion4 = true;
-  var _didIteratorError4 = false;
-  var _iteratorError4 = undefined;
+  var _iteratorNormalCompletion5 = true;
+  var _didIteratorError5 = false;
+  var _iteratorError5 = undefined;
 
   try {
-    for (var _iterator4 = game.staleTiles[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-      var id = _step4.value;
+    for (var _iterator5 = game.staleTiles[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+      var id = _step5.value;
 
       var entity = game.entities[id];
       entity.dictIndexStr = getDictIndexStr(game, entity);
     }
   } catch (err) {
-    _didIteratorError4 = true;
-    _iteratorError4 = err;
+    _didIteratorError5 = true;
+    _iteratorError5 = err;
   } finally {
     try {
-      if (!_iteratorNormalCompletion4 && _iterator4.return) {
-        _iterator4.return();
+      if (!_iteratorNormalCompletion5 && _iterator5.return) {
+        _iterator5.return();
       }
     } finally {
-      if (_didIteratorError4) {
-        throw _iteratorError4;
+      if (_didIteratorError5) {
+        throw _iteratorError5;
       }
     }
   }
@@ -3259,7 +3301,23 @@ var renderView = function renderView(canvas, ctx2d, game, dims, isMini) {
     ctx.strokeRect(rect.position.x, rect.position.y, rect.width, rect.height);
   }
 
+  // render score
+  renderScore(ctx, game.score, dims);
+
   ctx.restore();
+};
+
+var renderScore = function renderScore(ctx, score, dims) {
+  var text = 'Score: ' + score;
+  var fontSize = Math.min(dims.viewWidth, dims.viewHeight) / 10;
+
+  ctx.font = fontSize + 'px Arial';
+  ctx.fillStyle = "#aaa";
+
+  var _ctx$measureText = ctx.measureText(text),
+      width = _ctx$measureText.width;
+
+  ctx.fillText(text, dims.viewWidth / 2 - width / 2, 4);
 };
 
 var refreshStaleImage = function refreshStaleImage(game, dims) {
@@ -3675,9 +3733,9 @@ var renderAgent = function renderAgent(ctx, game, agent, spriteRenderFn) {
   ctx.translate(-width / 2, -height / 2);
 
   // render hp bar
-  // if (Math.ceil(agent.hp) < config[agent.playerID][agent.caste].hp) {
-  //   renderHealthBar(ctx, agent, config[agent.playerID][agent.caste].hp);
-  // }
+  if (agent.maxHP != null && Math.ceil(agent.hp) < agent.maxHP) {
+    renderHealthBar(ctx, agent, agent.maxHP);
+  }
 
   ctx.restore();
 
@@ -5455,6 +5513,7 @@ var entityStartCurrentAction = function entityStartCurrentAction(game, entity) {
     case 'BITE':
     case 'GRAPPLE':
       entityFight(game, entity, curAction.payload);
+      break;
     case 'TURN':
       rotateEntity(game, entity, curAction.payload);
       break;
@@ -7672,6 +7731,8 @@ var initBaseState = function initBaseState(gridSize, numPlayers) {
     playerID: 1,
     gaiaID: 0,
     numPlayers: numPlayers,
+
+    score: 0,
 
     // for tracking difficulty and missiles
     difficulty: 'NORMAL',
@@ -10614,7 +10675,7 @@ function LevelEditor(props) {
 
     // entity creation mode
     deleteMode: false,
-    entityType: 'FOOD',
+    entityType: 'ANT',
     subdividing: false,
     pheromoneType: 'HEAT',
     background: 'SKYLINE',

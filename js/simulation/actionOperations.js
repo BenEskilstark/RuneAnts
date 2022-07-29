@@ -69,6 +69,7 @@ const entityStartCurrentAction = (
     case 'BITE':
     case 'GRAPPLE':
       entityFight(game, entity, curAction.payload);
+      break;
     case 'TURN':
       rotateEntity(game, entity, curAction.payload);
       break;

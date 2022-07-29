@@ -50,7 +50,7 @@ function LevelEditor(props: Props): React.Node {
 
     // entity creation mode
     deleteMode: false,
-    entityType: 'FOOD',
+    entityType: 'ANT',
     subdividing: false,
     pheromoneType: 'HEAT',
     background: 'SKYLINE',

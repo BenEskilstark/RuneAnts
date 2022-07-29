@@ -5,7 +5,8 @@ const {getAntSpriteAndOffset} = require('../selectors/sprites');
 const {renderAgent} = require('../render/renderAgent');
 
 const config = {
-  hp: 60,
+  maxHP: 10, // hack to prevent circular reference with render Agent
+  hp: 10,
   damage: 1,
   width: 1,
   height: 1,
