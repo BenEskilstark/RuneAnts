@@ -97,7 +97,7 @@ const onMouseDown = (store, ev, handlers): void => {
   const {gridPos, state, game} = mouseData;
   const {dispatch} = store;
 
-  if (ev.button == 0) { // left click
+  if (ev.button == 0 || ev.type == 'touchstart') { // left click
     const {game} = state;
     dispatch({
       type: 'SET_MOUSE_DOWN',
@@ -125,7 +125,7 @@ const onMouseUp = (store, ev, handlers): void => {
   const {gridPos, state, game} = mouseData;
   const {dispatch} = store;
 
-  if (ev.button == 0) { // left click
+  if (ev.button == 0 || ev.type == 'touchend') { // left click
     dispatch({type: 'SET_MOUSE_DOWN', isLeft: true, isDown: false});
     if (handlers.leftUp != null) {
       handlers.leftUp(state, dispatch, gridPos);
@@ -185,9 +185,14 @@ const getMousePixel = (ev, canvas): ?Vector => {
   let x = ev.clientX;
   let y = ev.clientY;
   if (
-    ev.type === 'touchstart' || ev.type === 'touchmove' || ev.type === 'touchend'
+    ev.type === 'touchstart' || ev.type === 'touchmove'
   ) {
     const touch = ev.touches[0];
+    x = touch.clientX;
+    y = touch.clientY;
+  }
+  if (ev.type == 'touchend') {
+    const touch = ev.changedTouches[0];
     x = touch.clientX;
     y = touch.clientY;
   }

@@ -280,8 +280,8 @@ const entityFight = (game: Game, entity: Entity, target: ?Entity): void => {
     (entity.type == 'ANT' || entity.type == 'TERMITE') &&
     (entity.timeOnTask < 700 || entity.task != 'DEFEND')
   ) {
-    getEntityPositions(game, entity)
-      .forEach(pos => fillPheromone(game, pos, 'ALERT', entity.playerID));
+    // getEntityPositions(game, entity)
+    //   .forEach(pos => fillPheromone(game, pos, 'ALERT', entity.playerID));
   }
 
   // attacked ants holding stuff put it down

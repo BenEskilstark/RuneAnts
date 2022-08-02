@@ -20,7 +20,7 @@ var config = {
   dispersingPheromoneUpdateRate: 6,
   gravity: -100,
 
-  foodSpawnInterval: 1000 * 5,
+  foodSpawnInterval: 1000 * 15,
   minFood: 50
 
 };

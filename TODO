@@ -5,11 +5,14 @@
 
 
 - - - - - POLISH - - - - -
+  - mobile support:
+    - render full screen (what kind of dimensions?
+    - get running on heroku to test true mobile
   - Score based on food, enemies killed?
-  - Remove main menu
+    - render score in UI/Game
+    - win condition
     - hotkey for opening level editor
   - Add music from Antocracy
-  - Dead ants
   - make base look like an ant hill
   - favicon + name
 
@@ -17,12 +20,15 @@
 - - - - - - PLAY TESTING - - - - - - -
   - collecting food:
     - may recruit too readily to dead trails
-  - can't redirect retrieving ants with follow
+  - have ants go towards enemy colony too
+  - need some sort of overwhelm mechanic to help close out when
+    one player controls most of the map
 
 
 - - - - - - RUNE INTEGRATION - - - - -
   - Rune script include
   - Rune api calls
+  - Remove main menu
   - game over when ants are all killed or something?
 
 
@@ -31,6 +37,7 @@
   - Enemies spawn faster but you're stronger?
   - Briefly control a scorpion or something?
   - Balance towards losing eventually?
+  - Dead ants
 
 
 - - - - - - REFACTOR - - - - - -

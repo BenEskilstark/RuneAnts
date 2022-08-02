@@ -289,13 +289,19 @@ const agentDecideTask = (game, agent, nextPos): void => {
   }
 
   // switch to RETRIEVE if on FOOD pheromone
-  if (pherAtCell['FOOD'] > 0 && !holdingFood) {
+  if (pherAtCell['FOOD'] > 0 && !holdingFood && pherAtCell['FOLLOW'] == 0) {
     agentSwitchTask(game, agent, 'RETRIEVE');
     return agent.task;
   }
 
   // switch to WANDER if retrieving without pheromone
   if (pherAtCell['FOOD'] == 0 && agent.task == 'RETRIEVE') {
+    agentSwitchTask(game, agent, 'WANDER');
+    return agent.task;
+  }
+
+  // switch to WANDER if on FOLLOW pheromone
+  if (pherAtCell['FOLLOW'] > 0 && agent.task == 'RETRIEVE' && !holdingFood) {
     agentSwitchTask(game, agent, 'WANDER');
     return agent.task;
   }

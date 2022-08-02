@@ -27,7 +27,7 @@ function Lobby(props: Props): React.Node {
   const {dispatch, store} = props;
   const state = store.getState();
 
-  const [level, setLevel] = useState('procedural');
+  const [level, setLevel] = useState('smallerLevel');
   const [loading, setLoading] = useState('');
   const [isLoaded, setIsLoaded] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
@@ -109,7 +109,7 @@ function Lobby(props: Props): React.Node {
     }
     if (loading == 'Loading..') {
       setLoading('Loading...');
-      setTimeout(() => playLevel(store, level + 'Level', setLoadingProgress, setIsLoaded), 100);
+      setTimeout(() => playLevel(store, level, setLoadingProgress, setIsLoaded), 100);
     }
   }, [loading, isLoaded, loadingProgress]);
 
@@ -253,7 +253,7 @@ function MadeBy(props) {
 
 function LevelEditor(props) {
   const {dispatch} = props;
-  const [level, setLevel] = useState('testLevel');
+  const [level, setLevel] = useState('smallerLevel');
   const [useLevel, setUseLevel] = useState(true);
   const [rerender, setRerender] = useState(0);
 

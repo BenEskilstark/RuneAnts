@@ -23,8 +23,8 @@ const initFoodSpawnSystem = (store) => {
     ) {
       const size = normalIn(3, 9);
       const pos = {
-        x: normalIn(0, game.gridWidth - size),
-        y: normalIn(0, game.gridHeight - size),
+        x: randomIn(0, game.gridWidth - size),
+        y: randomIn(0, game.gridHeight - size),
       };
       dispatch({type: 'SPAWN_FOOD', pos, size});
     }

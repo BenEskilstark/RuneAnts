@@ -506,7 +506,7 @@ const renderPheromones = (ctx, game): void => {
           const quantity = pheromonesAtCell[pheromoneType];
           let alpha = Math.min(quantity / config[pheromoneType].quantity / 2, 0.5);
           if (alpha < 0.1) {
-            // continue; // don't bother rendering
+            continue; // don't bother rendering
           }
           alpha += 0.15;
           if (quantity <= 0) {
