@@ -2,7 +2,8 @@
 
 const React = require('react');
 const Button = require('./Components/Button.react');
-const Canvas = require('./Canvas.react');
+// const Canvas = require('./Canvas.react');
+const {Canvas} = require('bens_ui_components');
 const Checkbox = require('./Components/Checkbox.react');
 const RadioPicker = require('./Components/RadioPicker.react');
 const TopBar = require('./TopBar.react');
@@ -98,19 +99,22 @@ function Game(props: Props): React.Node {
           ? <ExperimentalSidebar state={state} dispatch={dispatch} />
           : null
       }
-      <Canvas
-        dispatch={dispatch}
-        tickInterval={tickInterval}
-        innerWidth={dims.width}
-        innerHeight={dims.height}
-        isExperimental={state.screen == 'EDITOR'}
-        focusedEntity={game.focusedEntity}
-      />
+      <Canvas useFullScreen={true} />
       <Ticker ticker={game.ticker} />
       <MiniTicker miniTicker={game.miniTicker} />
     </div>
   );
 }
+
+
+      // <Canvas
+      //   dispatch={dispatch}
+      //   tickInterval={tickInterval}
+      //   innerWidth={dims.width}
+      //   innerHeight={dims.height}
+      //   isExperimental={state.screen == 'EDITOR'}
+      //   focusedEntity={game.focusedEntity}
+      // />
 
 function registerHotkeys(dispatch) {
   dispatch({

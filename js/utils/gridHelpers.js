@@ -86,8 +86,8 @@ const deleteFromCell = (grid: Grid, position: Vector, entityID: EntityID): boole
 const canvasToGrid = (game: GameState, canvasPos: Vector): Vector => {
   const config = globalConfig.config;
   const scaleVec = {
-    x: game.viewWidth / config.canvasWidth,
-    y: game.viewHeight / config.canvasHeight,
+    x: game.viewWidth / window.innerWidth,
+    y: game.viewHeight / window.innerHeight,
   };
 
   const gridCoord = floor(

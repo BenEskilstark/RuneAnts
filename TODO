@@ -6,7 +6,6 @@
 
 - - - - - POLISH - - - - -
   - mobile support:
-    - render full screen (what kind of dimensions?
     - get running on heroku to test true mobile
   - Score based on food, enemies killed?
     - render score in UI/Game
@@ -14,6 +13,7 @@
     - hotkey for opening level editor
   - Add music from Antocracy
   - make base look like an ant hill
+  - remove un-needed images
   - favicon + name
 
 

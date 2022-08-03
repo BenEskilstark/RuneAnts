@@ -56,14 +56,14 @@ const renderFrame = (game: Game): void => {
   ctx = canvas.getContext('2d');
   if (!ctx) return;
   ctx.fillStyle = 'black';
-  ctx.fillRect(0, 0, globalConfig.config.canvasWidth, globalConfig.config.canvasHeight);
+  ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
 
-  const pxWidth = globalConfig.config.canvasWidth / 4;
+  const pxWidth = window.innerWidth / 4;
   const pxHeight = 0.6 * pxWidth;
   if (!game.maxMinimap) {
     const bigDims = {
-      pxWidth: globalConfig.config.canvasWidth,
-      pxHeight: globalConfig.config.canvasHeight,
+      pxWidth: window.innerWidth,
+      pxHeight: window.innerHeight,
       viewWidth: game.viewWidth,
       viewHeight: game.viewHeight,
       viewPos: {...game.viewPos},
@@ -82,8 +82,8 @@ const renderFrame = (game: Game): void => {
     renderView(canvas, ctx, game, bigDims);
     ctx.save();
     ctx.translate(
-      globalConfig.config.canvasWidth - pxWidth - 8,
-      globalConfig.config.canvasHeight - pxHeight - 8,
+      window.innerWidth - pxWidth - 8,
+      window.innerHeight - pxHeight - 8,
     );
     ctx.restore();
   } else {
@@ -92,8 +92,8 @@ const renderFrame = (game: Game): void => {
       y: game.viewPos.y - game.viewHeight / 2,
     };
     const bigDims = {
-      pxWidth: globalConfig.config.canvasWidth,
-      pxHeight: globalConfig.config.canvasHeight,
+      pxWidth: window.innerWidth,
+      pxHeight: window.innerHeight,
       viewWidth: game.viewWidth * 3,
       viewHeight: game.viewHeight * 3,
       viewPos: {
@@ -110,7 +110,7 @@ const renderFrame = (game: Game): void => {
     };
     ctx.save();
     ctx.translate(
-      globalConfig.config.canvasWidth - pxWidth - 8,
+      window.innerWidth - pxWidth - 8,
       8,
     );
     ctx.globalAlpha = 0.8;

@@ -9,8 +9,8 @@ var config = {
   canvasWidth: 1000,
   canvasHeight: 800,
 
-  viewWidth: 66,
-  viewHeight: 72,
+  viewWidth: 25,
+  viewHeight: 50,
   useFullScreen: true,
   cellWidth: 20,
   cellHeight: 16,
@@ -5032,8 +5032,8 @@ var deleteFromCell = function deleteFromCell(grid, position, entityID) {
 var canvasToGrid = function canvasToGrid(game, canvasPos) {
   var config = globalConfig.config;
   var scaleVec = {
-    x: game.viewWidth / config.canvasWidth,
-    y: game.viewHeight / config.canvasHeight
+    x: game.viewWidth / window.innerWidth,
+    y: game.viewHeight / window.innerHeight
   };
 
   var gridCoord = floor(add({ x: game.viewPos.x, y: game.viewPos.y }, multiply(canvasPos, scaleVec)));
