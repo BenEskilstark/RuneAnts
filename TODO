@@ -2,6 +2,8 @@
 - - - - - - - FIX - - - - - - - -
   - alert pheromone inconsistent (and probably shouldn't be rendered)
     - not disappearing after death
+  - follow pheromone just gives up after dragging a bit
+  - food pheromone not always going away either
 
 
 - - - - - POLISH - - - - -
@@ -11,6 +13,8 @@
     - render score in UI/Game
     - win condition
     - hotkey for opening level editor
+  - UX
+    - Ticker to tell player to tap/drag to add pheromone trails
   - Add music from Antocracy
   - make base look like an ant hill
   - remove un-needed images
@@ -29,7 +33,8 @@
   - Rune script include
   - Rune api calls
   - Remove main menu
-  - game over when ants are all killed or something?
+  - game over
+    - add HP to colony and kill it
 
 
 - - - - GAME MECHANICS - - - - -

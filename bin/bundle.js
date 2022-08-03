@@ -2835,7 +2835,8 @@ var updatePheromones = function updatePheromones(game) {
 
   if (game.time % globalConfig.config.dispersingPheromoneUpdateRate == 0) {
     game.pheromoneWorker.postMessage({
-      type: 'DISPERSE_PHEROMONES'
+      type: 'DISPERSE_PHEROMONES',
+      timeStamp: new Date().getTime()
     });
   }
 
@@ -3267,28 +3268,27 @@ var renderView = function renderView(canvas, ctx2d, game, dims, isMini) {
   }
 
   // render cursor square
-  var cursorPos = game.mouse.curPos;
-  ctx.lineWidth = ctx.lineWidth * 2;
-  var occupied = lookupInGrid(game.grid, cursorPos).map(function (id) {
-    return game.entities[id];
-  }).filter(function (e) {
-    return e != null && e.type == 'BACKGROUND' && !isAboveSomething(game, cursorPos);
-  }).length > 0;
-  if (!isNeighboringColonyPher(game, cursorPos) || occupied) {
-    ctx.fillStyle = 'rgba(139,0,0, 0.1)';
-    ctx.strokeStyle = 'red';
-  } else {
-    ctx.fillStyle = 'rgba(0,139,0, 0.1)';
-    ctx.strokeStyle = 'green';
-  }
-  var cursorWidth = 1;
-  var cursorHeight = 1;
-  if (game.placeType != null && Entities[game.placeType] != null) {
-    cursorWidth = Entities[game.placeType].config.width || 1;
-    cursorHeight = Entities[game.placeType].config.height || 1;
-  }
-  ctx.fillRect(cursorPos.x, cursorPos.y, cursorWidth, cursorHeight);
-  ctx.strokeRect(cursorPos.x, cursorPos.y, cursorWidth, cursorHeight);
+  // const cursorPos = game.mouse.curPos;
+  // ctx.lineWidth = ctx.lineWidth * 2;
+  // const occupied = lookupInGrid(game.grid, cursorPos)
+  //   .map(id => game.entities[id])
+  //   .filter(e => e != null && (e.type == 'BACKGROUND' && !isAboveSomething(game, cursorPos)))
+  //   .length > 0;
+  // if (!isNeighboringColonyPher(game, cursorPos) || occupied) {
+  //   ctx.fillStyle = 'rgba(139,0,0, 0.1)';
+  //   ctx.strokeStyle = 'red';
+  // } else {
+  //   ctx.fillStyle = 'rgba(0,139,0, 0.1)';
+  //   ctx.strokeStyle = 'green';
+  // }
+  // let cursorWidth = 1;
+  // let cursorHeight = 1;
+  // if (game.placeType != null && Entities[game.placeType] != null) {
+  //   cursorWidth = Entities[game.placeType].config.width || 1;
+  //   cursorHeight = Entities[game.placeType].config.height || 1;
+  // }
+  // ctx.fillRect(cursorPos.x, cursorPos.y,   cursorWidth, cursorHeight);
+  // ctx.strokeRect(cursorPos.x, cursorPos.y, cursorWidth, cursorHeight);
 
   // marquee
   if (game.isExperimental && document.onmousemove != null && (game.mouse.isLeftDown || game.keepMarquee) && game.mouseMode != 'COLLECT') {
@@ -5125,7 +5125,7 @@ var getPheromoneSprite = function getPheromoneSprite(game, position, playerID, p
     theta: 0
   };
 
-  if (quantity > config.quantity - config.decayAmount || pheromoneType == 'WATER') {
+  if (quantity > config.quantity - config.decayAmount || pheromoneType == 'FOLLOW') {
     obj.x = 5;
     obj.y += 4;
     obj.width = 4;

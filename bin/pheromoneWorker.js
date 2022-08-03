@@ -1233,7 +1233,8 @@ onmessage = function onmessage(ev) {
 
           floodFillQueue: [],
           reverseFloodFillQueue: [],
-          dispersingPheromonePositions: {}
+          dispersingPheromonePositions: {},
+          lastTime: new Date().getTime()
         };
         for (var pherType in globalConfig.pheromones) {
           var pheromone = globalConfig.pheromones[pherType];
@@ -1266,7 +1267,8 @@ onmessage = function onmessage(ev) {
     case 'DISPERSE_PHEROMONES':
       {
         if (!game) break;
-        startDispersePheromones();
+        startDispersePheromones(action.timeStamp);
+        game.lastTime = action.timeStamp;
         break;
       }
     case 'SET_PHEROMONE':
@@ -1449,9 +1451,9 @@ var startReverseFloodFill = function startReverseFloodFill() {
   postMessage({ type: 'PHEROMONES', result: result });
 };
 
-var startDispersePheromones = function startDispersePheromones() {
+var startDispersePheromones = function startDispersePheromones(timeStamp) {
   var result = [];
-  var nextDispersingPheromones = updateDispersingPheromones(game);
+  var nextDispersingPheromones = updateDispersingPheromones(game, timeStamp);
   for (var pherType in nextDispersingPheromones) {
     if (Object.keys(nextDispersingPheromones[pherType]).length > 0) {
       result.push(nextDispersingPheromones[pherType]);
@@ -1628,7 +1630,8 @@ var reverseFloodFillPheromone = function reverseFloodFillPheromone(game, pheromo
 };
 
 // fade pheromones that disperse
-var updateDispersingPheromones = function updateDispersingPheromones(game) {
+var updateDispersingPheromones = function updateDispersingPheromones(game, timeStamp) {
+  var timeSinceLastTick = timeStamp - game.lastTime;
   var nextDispersingPheromones = {};
   for (var pherType in globalConfig.pheromones) {
     var pheromone = globalConfig.pheromones[pherType];
@@ -1764,7 +1767,7 @@ var updateDispersingPheromones = function updateDispersingPheromones(game) {
       }
       // since we're only computed once every rate ticks, multiply here as if we had been
       // computing on every tick
-      decayRate *= rate;
+      decayRate *= timeSinceLastTick / globalConfig.config.msPerTick;
 
       //////////////////////////////////////////////////////////////////////////////
       // Update fluids
@@ -3357,7 +3360,7 @@ var getPheromoneSprite = function getPheromoneSprite(game, position, playerID, p
     theta: 0
   };
 
-  if (quantity > config.quantity - config.decayAmount || pheromoneType == 'WATER') {
+  if (quantity > config.quantity - config.decayAmount || pheromoneType == 'FOLLOW') {
     obj.x = 5;
     obj.y += 4;
     obj.width = 4;

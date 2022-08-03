@@ -363,6 +363,7 @@ const updatePheromones = (game: Game): void => {
   if (game.time % globalConfig.config.dispersingPheromoneUpdateRate == 0) {
     game.pheromoneWorker.postMessage({
       type: 'DISPERSE_PHEROMONES',
+      timeStamp: new Date().getTime(),
     });
   }
 

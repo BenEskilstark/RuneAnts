@@ -202,7 +202,9 @@ const getPheromoneSprite = (
     theta: 0,
   };
 
-  if (quantity > config.quantity - config.decayAmount || pheromoneType == 'WATER') {
+  if (
+    quantity > config.quantity - config.decayAmount || pheromoneType == 'FOLLOW'
+  ) {
     obj.x = 5;
     obj.y += 4;
     obj.width = 4;

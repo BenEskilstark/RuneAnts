@@ -59,6 +59,7 @@ onmessage = function(ev) {
         floodFillQueue: [],
         reverseFloodFillQueue: [],
         dispersingPheromonePositions: {},
+        lastTime: new Date().getTime(),
       };
       for (const pherType in globalConfig.pheromones) {
         const pheromone = globalConfig.pheromones[pherType];
@@ -84,7 +85,8 @@ onmessage = function(ev) {
     }
     case 'DISPERSE_PHEROMONES': {
       if (!game) break;
-      startDispersePheromones();
+      startDispersePheromones(action.timeStamp);
+      game.lastTime = action.timeStamp;
       break;
     }
     case 'SET_PHEROMONE': {
@@ -210,9 +212,9 @@ const startReverseFloodFill = () => {
   postMessage({type: 'PHEROMONES', result});
 }
 
-const startDispersePheromones = () => {
+const startDispersePheromones = (timeStamp) => {
   const result = [];
-  const nextDispersingPheromones = updateDispersingPheromones(game);
+  const nextDispersingPheromones = updateDispersingPheromones(game, timeStamp);
   for (const pherType in nextDispersingPheromones) {
     if (Object.keys(nextDispersingPheromones[pherType]).length > 0) {
       result.push(nextDispersingPheromones[pherType]);
@@ -336,7 +338,8 @@ const reverseFloodFillPheromone = (
 };
 
 // fade pheromones that disperse
-const updateDispersingPheromones = (game) => {
+const updateDispersingPheromones = (game, timeStamp) => {
+  const timeSinceLastTick = timeStamp - game.lastTime;
   const nextDispersingPheromones = {};
   for (const pherType in globalConfig.pheromones) {
     const pheromone = globalConfig.pheromones[pherType];
@@ -477,7 +480,7 @@ const updateDispersingPheromones = (game) => {
       }
       // since we're only computed once every rate ticks, multiply here as if we had been
       // computing on every tick
-      decayRate *= rate;
+      decayRate *= timeSinceLastTick / globalConfig.config.msPerTick;
 
       //////////////////////////////////////////////////////////////////////////////
       // Update fluids
