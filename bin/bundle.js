@@ -23,7 +23,7 @@ var config = {
   foodSpawnInterval: 1000 * 15,
   minFood: 50,
 
-  explosiveScoreMultiple: 25
+  explosiveScoreMultiple: 50
 
 };
 
