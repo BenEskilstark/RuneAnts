@@ -448,7 +448,7 @@ const updateAnts = (game): void => {
     for (const id of game.ANT) {
       const ant = game.entities[id];
       // with certain probability, let damage from two attackers go through
-      if (ant.hp - Math.floor(ant.hp) < 0.4 && Math.random() < 0.33) {
+      if (ant.hp - Math.floor(ant.hp) < 0.4 && Math.random() < 0.2) {
         ant.hp = Math.floor(ant.hp);
         continue;
       }
