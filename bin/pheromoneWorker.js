@@ -21,7 +21,9 @@ var config = {
   gravity: -100,
 
   foodSpawnInterval: 1000 * 15,
-  minFood: 50
+  minFood: 50,
+
+  explosiveScoreMultiple: 25
 
 };
 
@@ -61,7 +63,7 @@ var pheromones = {
   },
   FOLLOW: {
     quantity: 100,
-    decayAmount: 10,
+    decayAmount: 15,
     isDispersing: true,
     decayRate: 0.1, // how much it decays per tick
     color: 'rgb(210, 105, 30)',
@@ -517,6 +519,10 @@ var config = {
     duration: 41 * 6,
     spriteOrder: [5, 6, 7]
   },
+  BITE: {
+    duration: 41 * 6,
+    spriteOrder: [5, 6, 7]
+  },
 
   // task-specific params
   WANDER: {
@@ -649,14 +655,20 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 var _require = require('./makeEntity'),
     makeEntity = _require.makeEntity;
 
+var _require2 = require('../render/renderAgent'),
+    renderAgent = _require2.renderAgent;
+
 var globalConfig = require('../config');
 
 var config = {
-  hp: 150,
+  maxHP: 50,
+  hp: 50,
   width: 1,
   height: 1,
   PHEROMONE_EMITTER: true,
+  AGENT: true,
   pheromoneType: 'COLONY',
+  isExplosionImmune: true,
 
   blockingTypes: ['FOOD', 'DIRT', 'AGENT', 'STONE', 'DOODAD', 'WORM', 'TOKEN', 'DYNAMITE', 'COAL', 'IRON', 'STEEL'],
 
@@ -674,13 +686,17 @@ var make = function make(game, position, playerID, quantity) {
   });
 };
 
-var render = function render(ctx, game, base) {
+var render = function render(ctx, game, agent) {
+  renderAgent(ctx, game, agent, spriteRenderFn);
+};
+
+var spriteRenderFn = function spriteRenderFn(ctx, game, base) {
   var img = game.sprites.BASE;
-  ctx.drawImage(img, base.position.x, base.position.y, base.width, base.height);
+  ctx.drawImage(img, 0, 0, base.width, base.height);
 };
 
 module.exports = { config: config, make: make, render: render };
-},{"../config":1,"./makeEntity":10}],6:[function(require,module,exports){
+},{"../config":1,"../render/renderAgent":18,"./makeEntity":10}],6:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -836,7 +852,7 @@ var _require2 = require('./makeEntity'),
 
 var config = {
   TILED: true,
-  hp: 120
+  hp: 5
 };
 
 var make = function make(game, position, width, height) {

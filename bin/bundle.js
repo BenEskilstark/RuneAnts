@@ -21,7 +21,9 @@ var config = {
   gravity: -100,
 
   foodSpawnInterval: 1000 * 15,
-  minFood: 50
+  minFood: 50,
+
+  explosiveScoreMultiple: 25
 
 };
 
@@ -61,7 +63,7 @@ var pheromones = {
   },
   FOLLOW: {
     quantity: 100,
-    decayAmount: 10,
+    decayAmount: 15,
     isDispersing: true,
     decayRate: 0.1, // how much it decays per tick
     color: 'rgb(210, 105, 30)',
@@ -517,6 +519,10 @@ var config = {
     duration: 41 * 6,
     spriteOrder: [5, 6, 7]
   },
+  BITE: {
+    duration: 41 * 6,
+    spriteOrder: [5, 6, 7]
+  },
 
   // task-specific params
   WANDER: {
@@ -649,14 +655,20 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 var _require = require('./makeEntity'),
     makeEntity = _require.makeEntity;
 
+var _require2 = require('../render/renderAgent'),
+    renderAgent = _require2.renderAgent;
+
 var globalConfig = require('../config');
 
 var config = {
-  hp: 150,
+  maxHP: 50,
+  hp: 50,
   width: 1,
   height: 1,
   PHEROMONE_EMITTER: true,
+  AGENT: true,
   pheromoneType: 'COLONY',
+  isExplosionImmune: true,
 
   blockingTypes: ['FOOD', 'DIRT', 'AGENT', 'STONE', 'DOODAD', 'WORM', 'TOKEN', 'DYNAMITE', 'COAL', 'IRON', 'STEEL'],
 
@@ -674,13 +686,17 @@ var make = function make(game, position, playerID, quantity) {
   });
 };
 
-var render = function render(ctx, game, base) {
+var render = function render(ctx, game, agent) {
+  renderAgent(ctx, game, agent, spriteRenderFn);
+};
+
+var spriteRenderFn = function spriteRenderFn(ctx, game, base) {
   var img = game.sprites.BASE;
-  ctx.drawImage(img, base.position.x, base.position.y, base.width, base.height);
+  ctx.drawImage(img, 0, 0, base.width, base.height);
 };
 
 module.exports = { config: config, make: make, render: render };
-},{"../config":1,"./makeEntity":10}],6:[function(require,module,exports){
+},{"../config":1,"../render/renderAgent":32,"./makeEntity":10}],6:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -836,7 +852,7 @@ var _require2 = require('./makeEntity'),
 
 var config = {
   TILED: true,
-  hp: 120
+  hp: 5
 };
 
 var make = function make(game, position, width, height) {
@@ -1316,6 +1332,17 @@ var gameReducer = function gameReducer(game, action) {
         }
         return game;
       }
+    case 'USE_EXPLOSIVE':
+      {
+        var score = action.score,
+            gridPos = action.gridPos;
+
+        game.explosiveUses[score] = true;
+        addEntity(game, Entities.DYNAMITE.make(game, gridPos, game.playerID));
+        game.explosiveReady = false;
+        game.ticker = null;
+        return game;
+      }
     case 'SET_VIEW_POS':
       {
         var viewPos = action.viewPos,
@@ -1514,7 +1541,7 @@ var gameReducer = function gameReducer(game, action) {
       }
     case 'FILL_PHEROMONE':
       {
-        var gridPos = action.gridPos,
+        var _gridPos = action.gridPos,
             _pheromoneType = action.pheromoneType,
             playerID = action.playerID,
             quantity = action.quantity,
@@ -1531,8 +1558,8 @@ var gameReducer = function gameReducer(game, action) {
               fillPheromone(game, _pos2, _pheromoneType, playerID, quantity);
             }
           }
-        } else if (gridPos != null) {
-          fillPheromone(game, gridPos, _pheromoneType, playerID, quantity);
+        } else if (_gridPos != null) {
+          fillPheromone(game, _gridPos, _pheromoneType, playerID, quantity);
         }
         return game;
       }
@@ -2206,6 +2233,7 @@ var rootReducer = function rootReducer(state, action) {
       }
     case 'SET':
     case 'SPAWN_FOOD':
+    case 'USE_EXPLOSIVE':
     case 'UPDATE_ALL_PHEROMONES':
     case 'SET_GAME_OVER':
     case 'CREATE_ENTITY':
@@ -2583,6 +2611,12 @@ var doTick = function doTick(game) {
       PHEROMONE_EMITTER: game.PHEROMONE_EMITTER || {},
       TURBINE: game.TURBINE || []
     });
+
+    game.ticker = {
+      message: 'Drag to create pheromone trails',
+      time: 3000,
+      max: 3000
+    };
   }
 
   // game/frame timing
@@ -2599,6 +2633,7 @@ var doTick = function doTick(game) {
   updateViewPos(game, false /*don't clamp to world*/);
   updateTicker(game);
   updatePheromoneEmitters(game);
+  updateExplosives(game);
 
   updatePheromones(game);
   render(game);
@@ -2689,6 +2724,16 @@ var updateAgents = function updateAgents(game) {
 //////////////////////////////////////////////////////////////////////////
 
 var updateExplosives = function updateExplosives(game) {
+  if (game.score > 0 && // game.explosiveReady = false &&
+  game.score % globalConfig.config.explosiveScoreMultiple == 0 && !game.explosiveUses[game.score]) {
+    game.explosiveReady = true;
+    game.ticker = {
+      message: 'Explosive Ready!',
+      time: 10000,
+      max: 10000
+    };
+  }
+
   for (var id in game.EXPLOSIVE) {
     var explosive = game.entities[id];
     explosive.age += game.timeSinceLastTick;
@@ -2903,7 +2948,7 @@ var updateAnts = function updateAnts(game) {
 
         var ant = game.entities[id];
         // with certain probability, let damage from two attackers go through
-        if (ant.hp - Math.floor(ant.hp) < 0.4 && Math.random() < 0.1) {
+        if (ant.hp - Math.floor(ant.hp) < 0.4 && Math.random() < 0.33) {
           ant.hp = Math.floor(ant.hp);
           continue;
         }
@@ -3081,12 +3126,15 @@ var _require5 = require('../selectors/sprites'),
     getPheromoneSprite = _require5.getPheromoneSprite,
     getTileSprite = _require5.getTileSprite;
 
-var _require6 = require('../entities/registry'),
-    Entities = _require6.Entities;
+var _require6 = require('./renderHealthBar'),
+    renderHealthBar = _require6.renderHealthBar;
 
-var _require7 = require('../selectors/mouseInteractionSelectors'),
-    isNeighboringColonyPher = _require7.isNeighboringColonyPher,
-    isAboveSomething = _require7.isAboveSomething;
+var _require7 = require('../entities/registry'),
+    Entities = _require7.Entities;
+
+var _require8 = require('../selectors/mouseInteractionSelectors'),
+    isNeighboringColonyPher = _require8.isNeighboringColonyPher,
+    isAboveSomething = _require8.isAboveSomething;
 
 var cur = null;
 var prevTime = 0;
@@ -3468,6 +3516,14 @@ var renderEntity = function renderEntity(ctx, game, entity, alwaysOnScreen) {
     ctx.fillText(parseInt(entity.id), entity.position.x, entity.position.y + 1, 1);
   }
 
+  // render hp bar
+  // if (
+  //   !entity.AGENT && // HACK because this is already happening in
+  //   entity.maxHP != null && Math.ceil(entity.hp) < entity.maxHP
+  // ) {
+  //   renderHealthBar(ctx, entity, entity.maxHP);
+  // }
+
   // render held entity(s)
   if (entity.actions) {
     var curAction = entity.actions[0];
@@ -3691,7 +3747,7 @@ var renderPheromones = function renderPheromones(ctx, game) {
 };
 
 module.exports = { render: render };
-},{"../config":1,"../entities/registry":11,"../selectors/misc":37,"../selectors/mouseInteractionSelectors":38,"../selectors/sprites":41,"../utils/gridHelpers":90,"../utils/helpers":91,"../utils/vectors":94}],32:[function(require,module,exports){
+},{"../config":1,"../entities/registry":11,"../selectors/misc":37,"../selectors/mouseInteractionSelectors":38,"../selectors/sprites":41,"../utils/gridHelpers":90,"../utils/helpers":91,"../utils/vectors":94,"./renderHealthBar":33}],32:[function(require,module,exports){
 'use strict';
 
 var _require = require('../utils/vectors'),
@@ -6387,7 +6443,7 @@ var antDecideAction = function antDecideAction(game, ant) {
       if (isDiagonalMove(ant.position, e.position) && e.type == 'ANT') return false;
       return (
         // (game.config.critterTypes.includes(e.type)) ||
-        e.type == 'ANT' && e.playerID != ant.playerID
+        (e.type == 'ANT' || e.type == 'BASE') && e.playerID != ant.playerID
       );
     });
 
@@ -7238,6 +7294,7 @@ var triggerExplosion = function triggerExplosion(game, explosive, precompute) {
           }).forEach(function (e) {
             if (e == null || damage <= 0) return;
             if (alreadyDamaged[e.id]) return;
+            if (e.isExplosionImmune) return;
             alreadyDamaged[e.id] = true;
             if (e.hp > damage) {
               if (!precompute) {
@@ -7752,6 +7809,8 @@ var initBaseState = function initBaseState(gridSize, numPlayers) {
     sentNukeWarning: false,
     sentBusterWarning: false,
 
+    explosiveUses: {},
+
     // for tracking game time
     prevTickTime: 0,
     totalGameTime: 0,
@@ -7923,7 +7982,7 @@ var initFoodSpawnSystem = function initFoodSpawnSystem(store) {
     // spawn new food when atleast foodSpawnInterval has passed and
     // there's less than minFood food on the map
     if (time > 1 && game.timeSinceLastFoodSpawn > globalConfig.foodSpawnInterval && game.FOOD.length < globalConfig.minFood) {
-      var size = normalIn(3, 9);
+      var size = normalIn(3, 8);
       var pos = {
         x: randomIn(0, game.gridWidth - size),
         y: randomIn(0, game.gridHeight - size)
@@ -7982,13 +8041,16 @@ var initGameOverSystem = function initGameOverSystem(store) {
 
     // handle win conditions
 
-    if (false) {
-      handleGameWon(store, dispatch, state, 'win');
-    }
+    if (game.BASE.length == 1) {
+      var survivingBase = game.entities[game.BASE[0]];
+      if (survivingBase.playerID == game.playerID) {
+        handleGameWon(store, dispatch, state, 'win');
+      }
 
-    // loss conditions
-    if (false) {
-      handleGameLoss(store, dispatch, state, 'loss');
+      // loss conditions
+      if (survivingBase.playerID != game.playerID) {
+        handleGameLoss(store, dispatch, state, 'loss');
+      }
     }
   });
 };
@@ -9952,7 +10014,7 @@ function Game(props) {
       }
     },
     state.screen == 'EDITOR' ? React.createElement(ExperimentalSidebar, { state: state, dispatch: dispatch }) : null,
-    React.createElement(Canvas, { useFullScreen: true }),
+    React.createElement(Canvas, { useFullScreen: state.screen != 'EDITOR' }),
     React.createElement(Ticker, { ticker: game.ticker }),
     React.createElement(MiniTicker, { miniTicker: game.miniTicker })
   );
@@ -9966,6 +10028,7 @@ function Game(props) {
 //   isExperimental={state.screen == 'EDITOR'}
 //   focusedEntity={game.focusedEntity}
 // />
+
 
 function registerHotkeys(dispatch) {
   dispatch({
@@ -10113,6 +10176,12 @@ function configureMouseHandlers(game) {
         }
       }
     },
+    leftDown: function leftDown(state, dispatch, gridPos) {
+      var game = state.game;
+      if (game.explosiveReady) {
+        dispatch({ type: 'USE_EXPLOSIVE', score: game.score, gridPos: gridPos });
+      }
+    },
     leftUp: function leftUp(state, dispatch, gridPos) {
       dispatch({ type: 'SET',
         property: 'prevInteractPos',
@@ -10152,9 +10221,11 @@ function Ticker(props) {
       style: {
         position: 'absolute',
         top: 100,
-        left: 120,
-        opacity: shouldUseIndex ? index : 1,
+        left: 0,
+        width: '100%',
+        // opacity: shouldUseIndex ? index : 1,
         pointerEvents: 'none',
+        textAlign: 'center',
         textShadow: '-1px -1px 0 #FFF, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff'
       }
     },

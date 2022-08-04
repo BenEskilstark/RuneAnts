@@ -15,6 +15,7 @@ const {
   getInterpolatedPos, getSpriteAndOffset, getInterpolatedTheta,
   getPheromoneSprite, getTileSprite,
 } = require('../selectors/sprites');
+const {renderHealthBar} = require('./renderHealthBar');
 const {Entities} = require('../entities/registry');
 const {
   isNeighboringColonyPher, isAboveSomething,
@@ -396,6 +397,14 @@ const renderEntity = (ctx, game, entity, alwaysOnScreen): void => {
       parseInt(entity.id), entity.position.x, entity.position.y + 1, 1,
     );
   }
+
+  // render hp bar
+  // if (
+  //   !entity.AGENT && // HACK because this is already happening in
+  //   entity.maxHP != null && Math.ceil(entity.hp) < entity.maxHP
+  // ) {
+  //   renderHealthBar(ctx, entity, entity.maxHP);
+  // }
 
   // render held entity(s)
   if (entity.actions) {

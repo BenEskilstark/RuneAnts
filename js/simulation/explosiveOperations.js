@@ -54,6 +54,7 @@ const triggerExplosion = (game, explosive, precompute): Array<Vector> => {
           .forEach(e => {
             if (e == null || damage <= 0) return;
             if (alreadyDamaged[e.id]) return;
+            if (e.isExplosionImmune) return;
             alreadyDamaged[e.id] = true;
             if (e.hp > damage) {
               if (!precompute) {

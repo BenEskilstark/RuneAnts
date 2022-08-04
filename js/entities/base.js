@@ -1,14 +1,18 @@
 // @flow
 
 const {makeEntity} = require('./makeEntity');
+const {renderAgent} = require('../render/renderAgent');
 const globalConfig = require('../config');
 
 const config = {
-  hp: 150,
+  maxHP: 50,
+  hp: 50,
   width: 1,
   height: 1,
   PHEROMONE_EMITTER: true,
+  AGENT: true,
   pheromoneType: 'COLONY',
+  isExplosionImmune: true,
 
   blockingTypes: [
     'FOOD', 'DIRT', 'AGENT',
@@ -38,9 +42,13 @@ const make = (
   };
 };
 
-const render = (ctx, game, base): void => {
+const render = (ctx, game: Game, agent: Agent): void => {
+  renderAgent(ctx, game, agent, spriteRenderFn);
+}
+
+const spriteRenderFn = (ctx, game, base) => {
   const img = game.sprites.BASE;
-  ctx.drawImage(img, base.position.x, base.position.y, base.width, base.height);
+  ctx.drawImage(img, 0, 0, base.width, base.height);
 };
 
 module.exports = {config, make, render};

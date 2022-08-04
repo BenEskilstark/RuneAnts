@@ -71,6 +71,10 @@ const config = {
     duration: 41 * 6,
     spriteOrder: [5, 6, 7],
   },
+  BITE: {
+    duration: 41 * 6,
+    spriteOrder: [5, 6, 7],
+  },
 
   // task-specific params
   WANDER: {

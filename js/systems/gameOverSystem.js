@@ -32,13 +32,16 @@ const initGameOverSystem = (store) => {
     let {gameOver} = game;
 
     // handle win conditions
-    if (false) {
-      handleGameWon(store, dispatch, state, 'win');
-    }
+    if (game.BASE.length == 1) {
+      const survivingBase = game.entities[game.BASE[0]];
+      if (survivingBase.playerID == game.playerID) {
+        handleGameWon(store, dispatch, state, 'win');
+      }
 
-    // loss conditions
-    if (false) {
-      handleGameLoss(store, dispatch, state, 'loss');
+      // loss conditions
+      if (survivingBase.playerID != game.playerID) {
+        handleGameLoss(store, dispatch, state, 'loss');
+      }
     }
 
   });

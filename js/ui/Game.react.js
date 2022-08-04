@@ -99,13 +99,12 @@ function Game(props: Props): React.Node {
           ? <ExperimentalSidebar state={state} dispatch={dispatch} />
           : null
       }
-      <Canvas useFullScreen={true} />
+      <Canvas useFullScreen={state.screen != 'EDITOR'} />
       <Ticker ticker={game.ticker} />
       <MiniTicker miniTicker={game.miniTicker} />
     </div>
   );
 }
-
 
       // <Canvas
       //   dispatch={dispatch}
@@ -115,6 +114,7 @@ function Game(props: Props): React.Node {
       //   isExperimental={state.screen == 'EDITOR'}
       //   focusedEntity={game.focusedEntity}
       // />
+
 
 function registerHotkeys(dispatch) {
   dispatch({
@@ -265,6 +265,12 @@ function configureMouseHandlers(game) {
         }
       }
     },
+    leftDown: (state, dispatch, gridPos) => {
+      const game = state.game;
+      if (game.explosiveReady) {
+        dispatch({type: 'USE_EXPLOSIVE', score: game.score, gridPos});
+      }
+    },
     leftUp: (state, dispatch, gridPos) => {
       dispatch({type: 'SET',
         property: 'prevInteractPos',
@@ -302,9 +308,11 @@ function Ticker(props) {
       style={{
         position: 'absolute',
         top: 100,
-        left: 120,
-        opacity: shouldUseIndex ? index : 1,
+        left: 0,
+        width: '100%',
+        // opacity: shouldUseIndex ? index : 1,
         pointerEvents: 'none',
+        textAlign: 'center',
         textShadow: '-1px -1px 0 #FFF, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff',
       }}
     >

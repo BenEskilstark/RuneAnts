@@ -64,6 +64,8 @@ const initBaseState = (
     sentNukeWarning: false,
     sentBusterWarning: false,
 
+    explosiveUses: {},
+
     // for tracking game time
     prevTickTime: 0,
     totalGameTime: 0,

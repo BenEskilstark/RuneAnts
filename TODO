@@ -7,34 +7,42 @@
 
 
 - - - - - POLISH - - - - -
-  - mobile support:
-    - get running on heroku to test true mobile
   - Score based on food, enemies killed?
     - render score in UI/Game
-    - win condition
-    - hotkey for opening level editor
-  - UX
-    - Ticker to tell player to tap/drag to add pheromone trails
   - Add music from Antocracy
   - make base look like an ant hill
   - remove un-needed images
-  - favicon + name
+  - favicon
 
 
 - - - - - - PLAY TESTING - - - - - - -
   - collecting food:
     - may recruit too readily to dead trails
+    - stop spawning food when there's too many ants
+    - ants carrying food shouldn't be able to fight
   - have ants go towards enemy colony too
   - need some sort of overwhelm mechanic to help close out when
     one player controls most of the map
+    - what to do during gridlock stage?
+    - could just allow more damage to go through
+    - perhaps ants somehow "push" their way through?
+  - explosive
+    - tune score for getting it
 
 
 - - - - - - RUNE INTEGRATION - - - - -
+  - Score
+    - how to make score fit linear pattern?
+    - can score go down? how to handle win/loss (10x multiplier for win)?
+  - get rid of all localStore/api call stuff
   - Rune script include
   - Rune api calls
   - Remove main menu
+  - make sure everything is below 25MB
+  - Logo: 600x600 png
   - game over
-    - add HP to colony and kill it
+    - call Rune.gameOver(), how to indicate win vs loss?
+    - winning gives big score boost?
 
 
 - - - - GAME MECHANICS - - - - -

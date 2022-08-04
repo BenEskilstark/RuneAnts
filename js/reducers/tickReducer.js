@@ -101,6 +101,12 @@ const doTick = (game: Game): Game => {
       PHEROMONE_EMITTER: game.PHEROMONE_EMITTER || {},
       TURBINE: game.TURBINE || [],
     });
+
+    game.ticker = {
+      message: 'Drag to create pheromone trails',
+      time: 3000,
+      max: 3000,
+    };
   }
 
   // game/frame timing
@@ -117,6 +123,7 @@ const doTick = (game: Game): Game => {
   updateViewPos(game, false /*don't clamp to world*/);
   updateTicker(game);
   updatePheromoneEmitters(game);
+  updateExplosives(game);
 
   updatePheromones(game);
   render(game);
@@ -191,6 +198,19 @@ const updateAgents = (game): void => {
 //////////////////////////////////////////////////////////////////////////
 
 const updateExplosives = (game): void => {
+  if (
+    game.score > 0 && // game.explosiveReady = false &&
+    game.score % globalConfig.config.explosiveScoreMultiple == 0 &&
+    !game.explosiveUses[game.score]
+  ) {
+    game.explosiveReady = true;
+    game.ticker = {
+      message: 'Explosive Ready!',
+      time: 10000,
+      max: 10000,
+    };
+  }
+
   for (const id in game.EXPLOSIVE) {
     const explosive = game.entities[id];
     explosive.age += game.timeSinceLastTick;
@@ -428,7 +448,7 @@ const updateAnts = (game): void => {
     for (const id of game.ANT) {
       const ant = game.entities[id];
       // with certain probability, let damage from two attackers go through
-      if (ant.hp - Math.floor(ant.hp) < 0.4 && Math.random() < 0.1) {
+      if (ant.hp - Math.floor(ant.hp) < 0.4 && Math.random() < 0.33) {
         ant.hp = Math.floor(ant.hp);
         continue;
       }

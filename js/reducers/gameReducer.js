@@ -42,6 +42,14 @@ const gameReducer = (game: Game, action: Action): Game => {
       }
       return game;
     }
+    case 'USE_EXPLOSIVE': {
+      const {score, gridPos} = action;
+      game.explosiveUses[score] = true;
+      addEntity(game, Entities.DYNAMITE.make(game, gridPos, game.playerID));
+      game.explosiveReady = false;
+      game.ticker = null;
+      return game;
+    }
     case 'SET_VIEW_POS': {
       const {viewPos, viewWidth, viewHeight} = action;
       game.viewPos = viewPos;

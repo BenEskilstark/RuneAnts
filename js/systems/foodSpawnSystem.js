@@ -21,7 +21,7 @@ const initFoodSpawnSystem = (store) => {
       game.timeSinceLastFoodSpawn > globalConfig.foodSpawnInterval &&
       game.FOOD.length < globalConfig.minFood
     ) {
-      const size = normalIn(3, 9);
+      const size = normalIn(3, 8);
       const pos = {
         x: randomIn(0, game.gridWidth - size),
         y: randomIn(0, game.gridHeight - size),
