@@ -26,7 +26,7 @@ const initFoodSpawnSystem = (store) => {
       // to reduce variance
       const randFn = game.time < 4000 ? normalIn : randomIn
       const pos = {
-        x: randFn(0, game.gridWidth - size),
+        x: randomIn(0, game.gridWidth - size),
         y: randFn(0, game.gridHeight - size),
       };
       dispatch({type: 'SPAWN_FOOD', pos, size});

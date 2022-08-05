@@ -70,6 +70,20 @@ const entityStartCurrentAction = (
     case 'GRAPPLE':
       entityFight(game, entity, curAction.payload);
       break;
+    case 'WHIRLWIND': {
+      // find all targets
+      const targets = getNeighborEntities(game, entity, true /* external */)
+        .filter(e => e.hp > 0);
+      // deal damage and apply stun
+      for (const target of targets) {
+        dealDamageToEntity(game, target, entity.damage);
+      }
+      break;
+    }
+    case 'STUN': {
+      // do nothing
+      break;
+    }
     case 'TURN':
       rotateEntity(game, entity, curAction.payload);
       break;
@@ -190,6 +204,15 @@ const entityDie = (game: Game, entity: Entity): void => {
 
   if (entity.holding != null) {
     putdownEntity(game, entity.holding, entity.position);
+  }
+
+  // make food at their body
+  if (entity.isCritter) {
+    for (let x = 0; x < entity.width; x++) {
+      for (let y = 0; y < entity.height; y++) {
+        addEntity(game, Entities.FOOD.make(game, add({x, y}, entity.position)));
+      }
+    }
   }
 
   removeEntity(game, entity);

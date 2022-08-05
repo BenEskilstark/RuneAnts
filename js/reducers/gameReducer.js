@@ -35,6 +35,7 @@ const gameReducer = (game: Game, action: Action): Game => {
     case 'SPAWN_FOOD': {
       const {pos, size} = action;
       game.timeSinceLastFoodSpawn = 0;
+      // addEntity(game, Entities.SCORPION.make(game, pos, 0));
       for (let x = 0; x < size; x++) {
         for (let y = 0; y < size; y++) {
           addEntity(game, Entities.FOOD.make(game, add(pos, {x, y})));

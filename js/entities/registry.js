@@ -28,6 +28,7 @@ const Entities = {
 
   ANT: require('./ant.js'),
   WORM: require('./worm.js'),
+  SCORPION: require('./scorpion.js'),
 
   DYNAMITE: require('./dynamite.js'),
 

@@ -17,6 +17,9 @@
     - stop spawning food when there's too many ants
     - ants carrying food shouldn't be able to fight
   - have ants go towards enemy colony too
+  - scorpions:
+    - ants don't fight back
+    - render/implementation for whirlwind
 
 
 - - - - - - RUNE INTEGRATION - - - - -

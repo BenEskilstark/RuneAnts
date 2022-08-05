@@ -328,6 +328,10 @@ const agentDecideAction = (game: Game, agent: Agent): void => {
       agentDecideMove(game, agent);
       break;
     }
+    case 'SCORPION': {
+      critterDecideAction(game, agent);
+      break;
+    }
   }
 
 };
@@ -384,6 +388,95 @@ const antDecideAction = (game, ant) => {
 
   // MOVE
   agentDecideMove(game, ant);
+};
+
+const critterDecideAction = (game: Game, entity: Entity): void => {
+  const config = Entities[entity.type].config;
+  // biting
+  const targets = getNeighborEntities(game, entity, true /* external */)
+    .filter(e => {
+      if (e.position == null) return false;
+      return (
+        e.type == 'ANT' || e.type == 'EGG' || e.type == 'LARVA' ||
+        e.type == 'PUPA' || e.type == 'TERMITE' || e.type == 'TERMITE_EGG'
+      );
+    });
+
+  // critters with 0 damage don't fight,
+  // and nothing fights in presence of DOMESTICATE pheromone
+  // and aphids only fight if they've taken damage
+  let domPher = false;
+  for (const pos of getEntityPositions(game, entity)) {
+    if (getPheromoneAtPosition(game, entity.position, 'DOMESTICATE', game.playerID) > 0) {
+      domPher = true;
+    }
+  }
+  const attackAphid = (entity.type == 'APHID' && entity.hp < config.hp)
+    || entity.type != 'APHID';
+  if (
+    targets.length > 0 && config.damage > 0 &&
+    (!domPher || entity.type == 'SCORPION') &&
+    attackAphid
+  ) {
+    const target = oneOf(targets);
+    if (entity.type == 'SCORPION') {
+      if (entity.attackIndex % 4 == 0) {
+        queueAction(game, entity, makeAction(game, entity, 'WHIRLWIND', null));
+        queueAction(game, entity, makeAction(game, entity, 'STUN', null));
+      } else {
+        queueAction(game, entity, makeAction(game, entity, 'BITE', target));
+        queueAction(game, entity, makeAction(game, entity, 'STUN', null));
+      }
+      entity.attackIndex += 1;
+    } else if (entity.type == 'SPIDER') {
+      queueAction(game, entity, makeAction(game, entity, 'BITE', target));
+      queueAction(game, entity, makeAction(game, entity, 'STUN', null));
+    } else {
+      queueAction(game, entity, makeAction(game, entity, 'BITE', target));
+    }
+    return;
+  }
+
+  // rolled up roly polies don't move
+  if (entity.rolled) {
+    if (entity.prevHPAge > 5000) {
+      entity.rolled = false;
+    }
+    return;
+  }
+
+  // moving
+  let freeNeighbors = getFreeNeighborPositions(
+    game, entity, Entities.AGENT.config.blockingTypes,
+  )
+  // segmented entities don't move diagonally
+  if (entity.segmented) {
+    freeNeighbors = freeNeighbors
+      .filter(pos => !isDiagonalMove(entity.position, pos));
+  }
+  if (Math.random() < 0.1 && freeNeighbors.length > 0) {
+    let nextPos = oneOf(freeNeighbors);
+    const forwardPosition = add(entity.position, round(makeVector(entity.theta, 1)));
+    const forwardFree = freeNeighbors.filter(v => equals(v, forwardPosition)).length > 0;
+    if (forwardFree && Math.random() < 0.66) {
+      nextPos = forwardPosition;
+    }
+    queueAction(game, entity, makeAction(game, entity, 'MOVE', {nextPos}));
+    if (entity.type == 'SPIDER') {
+      queueAction(game, entity, makeAction(game, entity, 'STUN', null));
+    }
+    return;
+  } else if (freeNeighbors.length == 0) {
+    entity.prevPosition = {...entity.position};
+    if (entity.segmented) {
+      entity.stuck = true;
+    }
+    return;
+  }
+
+  if (entity.stuck && freeNeighbors.length > 0 && entity.segmented) {
+    entity.stuck = false;
+  }
 };
 
 

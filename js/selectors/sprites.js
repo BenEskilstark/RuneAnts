@@ -116,6 +116,27 @@ const getFastBarrelSprite = (game: Game, turret: Turret): Object => {
   return obj;
 }
 
+const getScorpionSprite = (game: Game, scorpion: Scorpion): Object => {
+  const config = game.config;
+  let width = 48;
+  let height = 48;
+  const obj = {
+    img: game.sprites.SCORPION,
+    x: 0, y: 0,
+    width, height,
+  };
+  let index = getInterpolatedIndex(game, scorpion);
+  if (scorpion.type == 'DEAD_SCORPION') {
+    index = 6;
+    obj.x = index * width;
+  } else if (scorpion.actions.length == 0) {
+    return obj;
+  } else {
+    obj.x = getFrame(game, scorpion, index) * width;
+  }
+  return obj;
+};
+
 //////////////////////////////////////////////////////////////////////
 // Missile-specific
 //////////////////////////////////////////////////////////////////////
@@ -451,4 +472,5 @@ module.exports = {
   getSegmentSprite,
   getSegmentHead,
   getSegmentTail,
+  getScorpionSprite,
 }
