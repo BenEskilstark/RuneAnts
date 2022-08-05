@@ -23,7 +23,7 @@ var config = {
   foodSpawnInterval: 1000 * 15,
   minFood: 50,
 
-  explosiveScoreMultiple: 50
+  explosiveScoreMultiple: 60
 
 };
 
@@ -63,7 +63,7 @@ var pheromones = {
   },
   FOLLOW: {
     quantity: 100,
-    decayAmount: 15,
+    decayAmount: 100,
     isDispersing: true,
     decayRate: 0.1, // how much it decays per tick
     color: 'rgb(210, 105, 30)',
@@ -3363,7 +3363,7 @@ var renderScore = function renderScore(ctx, score, dims) {
   var fontSize = Math.min(dims.viewWidth, dims.viewHeight) / 10;
 
   ctx.font = fontSize + 'px Arial';
-  ctx.fillStyle = "#aaa";
+  ctx.fillStyle = "#000";
 
   var _ctx$measureText = ctx.measureText(text),
       width = _ctx$measureText.width;
@@ -3404,13 +3404,13 @@ var refreshStaleImage = function refreshStaleImage(game, dims) {
 
   if (game.viewImage.allStale) {
     // background
-    ctx.fillStyle = 'rgba(186, 175, 137, 1)';
+    ctx.fillStyle = 'rgba(186, 175, 160, 1)';
     ctx.fillRect(0, 0, game.gridWidth, game.gridHeight);
     ctx.globalAlpha = 0.2;
     for (var y = 0; y < game.gridHeight; y++) {
       // ctx.globalAlpha += y / game.gridHeight / 100;
       for (var x = 0; x < game.gridWidth; x++) {
-        var obj = getTileSprite(game, { type: 'DIRT', dictIndexStr: 'lrtb' });
+        var obj = getTileSprite(game, { type: 'STONE', dictIndexStr: 'lrtb' });
         if (obj != null && obj.img != null) {
           ctx.drawImage(obj.img, obj.x, obj.y, obj.width, obj.height, x, y, 1, 1);
         }
@@ -7983,9 +7983,12 @@ var initFoodSpawnSystem = function initFoodSpawnSystem(store) {
     // there's less than minFood food on the map
     if (time > 1 && game.timeSinceLastFoodSpawn > globalConfig.foodSpawnInterval && game.FOOD.length < globalConfig.minFood) {
       var size = normalIn(3, 8);
+      // spawn food closer to the center at first, then allow anywhere
+      // to reduce variance
+      var randFn = game.time < 4000 ? normalIn : randomIn;
       var pos = {
-        x: randomIn(0, game.gridWidth - size),
-        y: randomIn(0, game.gridHeight - size)
+        x: randFn(0, game.gridWidth - size),
+        y: randFn(0, game.gridHeight - size)
       };
       dispatch({ type: 'SPAWN_FOOD', pos: pos, size: size });
     }

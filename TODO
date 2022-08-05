@@ -1,7 +1,5 @@
 
 - - - - - - - FIX - - - - - - - -
-  - alert pheromone inconsistent (and probably shouldn't be rendered)
-    - not disappearing after death
   - follow pheromone just gives up after dragging a bit
   - food pheromone not always going away either
 
@@ -11,24 +9,14 @@
     - render score in UI/Game
   - Add music from Antocracy
   - make base look like an ant hill
-  - remove un-needed images
   - favicon
 
 
 - - - - - - PLAY TESTING - - - - - - -
   - collecting food:
-    - may recruit too readily to dead trails
     - stop spawning food when there's too many ants
     - ants carrying food shouldn't be able to fight
   - have ants go towards enemy colony too
-  - need some sort of overwhelm mechanic to help close out when
-    one player controls most of the map
-    - what to do during gridlock stage?
-    - could just allow more damage to go through
-    - perhaps ants somehow "push" their way through?
-  - explosive
-    - tune score for getting it
-  - tune ants teaming up damages
 
 
 - - - - - - RUNE INTEGRATION - - - - -

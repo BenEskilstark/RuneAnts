@@ -22,7 +22,7 @@ const config = {
   foodSpawnInterval: 1000 * 15,
   minFood: 50,
 
-  explosiveScoreMultiple: 50,
+  explosiveScoreMultiple: 60,
 
 };
 
@@ -68,7 +68,7 @@ const pheromones = {
   },
   FOLLOW: {
     quantity: 100,
-    decayAmount: 15,
+    decayAmount: 100,
     isDispersing: true,
     decayRate: 0.1, // how much it decays per tick
     color: 'rgb(210, 105, 30)',

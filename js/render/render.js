@@ -247,7 +247,7 @@ const renderScore = (ctx, score, dims) => {
   const fontSize = Math.min(dims.viewWidth, dims.viewHeight) / 10
 
   ctx.font = `${fontSize}px Arial`
-  ctx.fillStyle = "#aaa"
+  ctx.fillStyle = "#000"
 
   const { width } = ctx.measureText(text)
 
@@ -290,7 +290,7 @@ const refreshStaleImage = (game, dims): void => {
 
   if (game.viewImage.allStale) {
     // background
-    ctx.fillStyle = 'rgba(186, 175, 137, 1)';
+    ctx.fillStyle = 'rgba(186, 175, 160, 1)';
     ctx.fillRect(
       0, 0, game.gridWidth, game.gridHeight,
     );
@@ -298,7 +298,7 @@ const refreshStaleImage = (game, dims): void => {
     for (let y = 0; y < game.gridHeight; y++) {
       // ctx.globalAlpha += y / game.gridHeight / 100;
       for (let x = 0; x < game.gridWidth; x++) {
-        const obj = getTileSprite(game, {type: 'DIRT', dictIndexStr: 'lrtb'});
+        const obj = getTileSprite(game, {type: 'STONE', dictIndexStr: 'lrtb'});
         if (obj != null && obj.img != null) {
           ctx.drawImage(
             obj.img,

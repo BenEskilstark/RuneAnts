@@ -22,9 +22,12 @@ const initFoodSpawnSystem = (store) => {
       game.FOOD.length < globalConfig.minFood
     ) {
       const size = normalIn(3, 8);
+      // spawn food closer to the center at first, then allow anywhere
+      // to reduce variance
+      const randFn = game.time < 4000 ? normalIn : randomIn
       const pos = {
-        x: randomIn(0, game.gridWidth - size),
-        y: randomIn(0, game.gridHeight - size),
+        x: randFn(0, game.gridWidth - size),
+        y: randFn(0, game.gridHeight - size),
       };
       dispatch({type: 'SPAWN_FOOD', pos, size});
     }
