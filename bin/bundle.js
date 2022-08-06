@@ -960,8 +960,8 @@ var _require3 = require('../selectors/sprites'),
 
 var config = _extends({}, Agent.config, {
 
-  hp: 120,
-  maxHP: 120,
+  hp: 300,
+  maxHP: 300,
   damage: 10,
   width: 6,
   height: 6,
@@ -1012,7 +1012,8 @@ var make = function make(game, position, playerID) {
     type: 'SCORPION',
     prevHP: config.hp,
     prevHPAge: 0,
-    actions: []
+    actions: [],
+    attackIndex: 0 // for attacking with whirlwind
   });
 };
 
@@ -1418,12 +1419,24 @@ var gameReducer = function gameReducer(game, action) {
             size = action.size;
 
         game.timeSinceLastFoodSpawn = 0;
-        addEntity(game, Entities.SCORPION.make(game, pos, 0));
-        // for (let x = 0; x < size; x++) {
-        //   for (let y = 0; y < size; y++) {
-        //     addEntity(game, Entities.FOOD.make(game, add(pos, {x, y})));
-        //   }
-        // }
+        for (var x = 0; x < size; x++) {
+          for (var y = 0; y < size; y++) {
+            addEntity(game, Entities.FOOD.make(game, add(pos, { x: x, y: y })));
+          }
+        }
+        return game;
+      }
+    case 'SPAWN_SCORPION':
+      {
+        var _pos = action.pos;
+
+        game.numScorpionsSpawned++;
+        addEntity(game, Entities.SCORPION.make(game, _pos, 0));
+        game.ticker = {
+          message: 'Scorpion Attack!',
+          time: 3000,
+          max: 3000
+        };
         return game;
       }
     case 'USE_EXPLOSIVE':
@@ -1578,12 +1591,12 @@ var gameReducer = function gameReducer(game, action) {
 
           game.viewImage.isStale = true;
 
-          var _loop = function _loop(x) {
-            var _loop2 = function _loop2(y) {
-              var entities = lookupInGrid(game.grid, add(position, { x: x, y: y })).map(function (id) {
+          var _loop = function _loop(_x) {
+            var _loop2 = function _loop2(_y) {
+              var entities = lookupInGrid(game.grid, add(position, { x: _x, y: _y })).map(function (id) {
                 return game.entities[id];
               }).filter(function (e) {
-                return equals(e.position, add(position, { x: x, y: y }));
+                return equals(e.position, add(position, { x: _x, y: _y }));
               });
               var _iteratorNormalCompletion = true;
               var _didIteratorError = false;
@@ -1593,11 +1606,11 @@ var gameReducer = function gameReducer(game, action) {
                 for (var _iterator = entities[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
                   var copyEntity = _step.value;
 
-                  var _pos = add(pastePos, { x: x, y: y });
-                  var key = encodePosition(_pos);
-                  game.viewImage.stalePositions[key] = _pos;
+                  var _pos2 = add(pastePos, { x: _x, y: _y });
+                  var key = encodePosition(_pos2);
+                  game.viewImage.stalePositions[key] = _pos2;
 
-                  var _entity3 = _extends({}, copyEntity, { position: _pos });
+                  var _entity3 = _extends({}, copyEntity, { position: _pos2 });
                   if (!entityInsideGrid(game, _entity3)) continue;
                   addEntity(game, _entity3);
                 }
@@ -1617,13 +1630,13 @@ var gameReducer = function gameReducer(game, action) {
               }
             };
 
-            for (var y = 0; y < height; y++) {
-              _loop2(y);
+            for (var _y = 0; _y < height; _y++) {
+              _loop2(_y);
             }
           };
 
-          for (var x = 0; x < width; x++) {
-            _loop(x);
+          for (var _x = 0; _x < width; _x++) {
+            _loop(_x);
           }
 
           return {
@@ -1646,10 +1659,10 @@ var gameReducer = function gameReducer(game, action) {
               width = _rect.width,
               height = _rect.height;
 
-          for (var x = 0; x < width; x++) {
-            for (var y = 0; y < height; y++) {
-              var _pos2 = add(_position, { x: x, y: y });
-              fillPheromone(game, _pos2, _pheromoneType, playerID, quantity);
+          for (var _x2 = 0; _x2 < width; _x2++) {
+            for (var _y2 = 0; _y2 < height; _y2++) {
+              var _pos3 = add(_position, { x: _x2, y: _y2 });
+              fillPheromone(game, _pos3, _pheromoneType, playerID, quantity);
             }
           }
         } else if (_gridPos != null) {
@@ -1721,10 +1734,10 @@ var gameReducer = function gameReducer(game, action) {
             _width = _rect2.width,
             _height = _rect2.height;
 
-        for (var _x = 0; _x < _width; _x++) {
-          for (var _y = 0; _y < _height; _y++) {
-            var _pos3 = add(_position3, { x: _x, y: _y });
-            var ids = lookupInGrid(game.grid, _pos3);
+        for (var _x3 = 0; _x3 < _width; _x3++) {
+          for (var _y3 = 0; _y3 < _height; _y3++) {
+            var _pos4 = add(_position3, { x: _x3, y: _y3 });
+            var ids = lookupInGrid(game.grid, _pos4);
             var _iteratorNormalCompletion3 = true;
             var _didIteratorError3 = false;
             var _iteratorError3 = undefined;
@@ -1787,7 +1800,6 @@ var gameReducer = function gameReducer(game, action) {
         var difficulty = action.difficulty;
 
         game.difficulty = difficulty;
-        game.missileFrequency = globalConfig.config.difficulty[difficulty].startFrequency;
         return game;
       }
     case 'SET_LAST_MISSILE_TIME':
@@ -2327,6 +2339,7 @@ var rootReducer = function rootReducer(state, action) {
       }
     case 'SET':
     case 'SPAWN_FOOD':
+    case 'SPAWN_SCORPION':
     case 'USE_EXPLOSIVE':
     case 'UPDATE_ALL_PHEROMONES':
     case 'SET_GAME_OVER':
@@ -5146,6 +5159,14 @@ var getInterpolatedTheta = function getInterpolatedTheta(game, entity) {
         theta = _progress2 * _diff2 + entity.prevTheta;
         break;
       }
+    case 'WHIRLWIND':
+      {
+        var _diff3 = Math.PI * 4;
+        var _duration3 = getDuration(game, entity, action.type);
+        var _progress3 = (_duration3 - (action.duration + 0)) / _duration3;
+        theta = _progress3 * _diff3 + entity.theta;
+        break;
+      }
   }
   return theta;
 };
@@ -5642,7 +5663,8 @@ var _require13 = require('../entities/registry'),
 
 var _require14 = require('../selectors/neighbors'),
     areNeighbors = _require14.areNeighbors,
-    getNeighborPositions = _require14.getNeighborPositions;
+    getNeighborPositions = _require14.getNeighborPositions,
+    getNeighborEntities = _require14.getNeighborEntities;
 
 var entityStartCurrentAction = function entityStartCurrentAction(game, entity) {
   if (entity.actions.length == 0) return;
@@ -5704,7 +5726,7 @@ var entityStartCurrentAction = function entityStartCurrentAction(game, entity) {
           for (var _iterator = targets[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
             var target = _step.value;
 
-            dealDamageToEntity(game, target, entity.damage);
+            dealDamageToEntity(game, target, entity.damage / 2);
           }
         } catch (err) {
           _didIteratorError = true;
@@ -6610,10 +6632,7 @@ var antDecideAction = function antDecideAction(game, ant) {
     var targets = getNeighborEntities(game, ant, true).filter(function (e) {
       if (e.position == null) return false;
       if (isDiagonalMove(ant.position, e.position) && e.type == 'ANT') return false;
-      return (
-        // (game.config.critterTypes.includes(e.type)) ||
-        (e.type == 'ANT' || e.type == 'BASE') && e.playerID != ant.playerID
-      );
+      return e.isCritter || (e.type == 'ANT' || e.type == 'BASE') && e.playerID != ant.playerID;
     });
 
     if (targets.length > 0) {
@@ -8070,6 +8089,7 @@ var initBaseState = function initBaseState(gridSize, numPlayers) {
     numPlayers: numPlayers,
 
     score: 0,
+    numScorpionsSpawned: 0,
 
     // for tracking difficulty and missiles
     difficulty: 'NORMAL',
@@ -8254,15 +8274,26 @@ var initFoodSpawnSystem = function initFoodSpawnSystem(store) {
     // spawn new food when atleast foodSpawnInterval has passed and
     // there's less than minFood food on the map
     if (time > 1 && game.timeSinceLastFoodSpawn > globalConfig.foodSpawnInterval && game.FOOD.length < globalConfig.minFood) {
-      var size = normalIn(3, 8);
-      // spawn food closer to the center at first, then allow anywhere
-      // to reduce variance
-      var randFn = game.time < 4000 ? normalIn : randomIn;
-      var pos = {
-        x: randomIn(0, game.gridWidth - size),
-        y: randFn(0, game.gridHeight - size)
-      };
-      dispatch({ type: 'SPAWN_FOOD', pos: pos, size: size });
+
+      // maybe spawn a scorpion instead
+      if (game.numScorpionsSpawned == 0 && game.time > 6000 || game.time > 6000 && Math.random() < 0.02) {
+        var size = 6;
+        var pos = {
+          x: randomIn(0, game.gridWidth - size),
+          y: normalIn(0, game.gridHeight - size)
+        };
+        dispatch({ type: 'SPAWN_SCORPION', pos: pos });
+      } else {
+        var _size = normalIn(3, 8);
+        // spawn food closer to the center at first, then allow anywhere
+        // to reduce variance
+        var randFn = game.time < 4000 ? normalIn : randomIn;
+        var _pos = {
+          x: randomIn(0, game.gridWidth - _size),
+          y: randFn(0, game.gridHeight - _size)
+        };
+        dispatch({ type: 'SPAWN_FOOD', pos: _pos, size: _size });
+      }
     }
   });
 };

@@ -1,25 +1,19 @@
 
 - - - - - - - FIX - - - - - - - -
-  - follow pheromone just gives up after dragging a bit
   - food pheromone not always going away either
+  - ants carrying food shouldn't be able to fight
 
 
 - - - - - POLISH - - - - -
-  - Score based on food, enemies killed?
-    - render score in UI/Game
+  - render score in UI/Game
   - Add music from Antocracy
   - make base look like an ant hill
   - favicon
 
 
 - - - - - - PLAY TESTING - - - - - - -
-  - collecting food:
-    - stop spawning food when there's too many ants
-    - ants carrying food shouldn't be able to fight
   - have ants go towards enemy colony too
   - scorpions:
-    - ants don't fight back
-    - render/implementation for whirlwind
 
 
 - - - - - - RUNE INTEGRATION - - - - -

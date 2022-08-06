@@ -21,15 +21,29 @@ const initFoodSpawnSystem = (store) => {
       game.timeSinceLastFoodSpawn > globalConfig.foodSpawnInterval &&
       game.FOOD.length < globalConfig.minFood
     ) {
-      const size = normalIn(3, 8);
-      // spawn food closer to the center at first, then allow anywhere
-      // to reduce variance
-      const randFn = game.time < 4000 ? normalIn : randomIn
-      const pos = {
-        x: randomIn(0, game.gridWidth - size),
-        y: randFn(0, game.gridHeight - size),
-      };
-      dispatch({type: 'SPAWN_FOOD', pos, size});
+
+      // maybe spawn a scorpion instead
+      if (
+        (game.numScorpionsSpawned == 0 && game.time > 6000) ||
+        (game.time > 6000 && Math.random() < 0.02)
+      ) {
+        const size = 6;
+        const pos = {
+          x: randomIn(0, game.gridWidth - size),
+          y: normalIn(0, game.gridHeight - size),
+        };
+        dispatch({type: 'SPAWN_SCORPION', pos});
+      } else {
+        const size = normalIn(3, 8);
+        // spawn food closer to the center at first, then allow anywhere
+        // to reduce variance
+        const randFn = game.time < 4000 ? normalIn : randomIn
+        const pos = {
+          x: randomIn(0, game.gridWidth - size),
+          y: randFn(0, game.gridHeight - size),
+        };
+        dispatch({type: 'SPAWN_FOOD', pos, size});
+      }
     }
 
   });

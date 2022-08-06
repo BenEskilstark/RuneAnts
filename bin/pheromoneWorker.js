@@ -960,8 +960,8 @@ var _require3 = require('../selectors/sprites'),
 
 var config = _extends({}, Agent.config, {
 
-  hp: 120,
-  maxHP: 120,
+  hp: 300,
+  maxHP: 300,
   damage: 10,
   width: 6,
   height: 6,
@@ -1012,7 +1012,8 @@ var make = function make(game, position, playerID) {
     type: 'SCORPION',
     prevHP: config.hp,
     prevHPAge: 0,
-    actions: []
+    actions: [],
+    attackIndex: 0 // for attacking with whirlwind
   });
 };
 
@@ -3338,6 +3339,14 @@ var getInterpolatedTheta = function getInterpolatedTheta(game, entity) {
         var _duration2 = getDuration(game, entity, action.type);
         var _progress2 = (_duration2 - (action.duration + 0)) / _duration2;
         theta = _progress2 * _diff2 + entity.prevTheta;
+        break;
+      }
+    case 'WHIRLWIND':
+      {
+        var _diff3 = Math.PI * 4;
+        var _duration3 = getDuration(game, entity, action.type);
+        var _progress3 = (_duration3 - (action.duration + 0)) / _duration3;
+        theta = _progress3 * _diff3 + entity.theta;
         break;
       }
   }

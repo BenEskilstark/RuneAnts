@@ -53,6 +53,7 @@ const initBaseState = (
     numPlayers,
 
     score: 0,
+    numScorpionsSpawned: 0,
 
     // for tracking difficulty and missiles
     difficulty: 'NORMAL',

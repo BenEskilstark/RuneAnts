@@ -71,6 +71,13 @@ const getInterpolatedTheta = (game: Game, entity: Entity): Vector => {
       theta = progress * diff + entity.prevTheta;
       break;
     }
+    case 'WHIRLWIND': {
+      const diff = Math.PI * 4;
+      const duration = getDuration(game, entity, action.type);
+      const progress = (duration - (action.duration + 0)) / duration;
+      theta = progress * diff + entity.theta;
+      break;
+    }
   }
   return theta;
 };

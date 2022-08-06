@@ -8,8 +8,8 @@ const {getScorpionSprite} = require('../selectors/sprites');
 const config = {
   ...Agent.config,
 
-  hp: 120,
-  maxHP: 120,
+  hp: 300,
+  maxHP: 300,
   damage: 10,
   width: 6,
   height: 6,
@@ -64,6 +64,7 @@ const make = (game: Game, position: Vector, playerID) => {
     prevHP: config.hp,
     prevHPAge: 0,
     actions: [],
+    attackIndex: 0, // for attacking with whirlwind
   };
 };
 

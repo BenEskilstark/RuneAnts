@@ -344,7 +344,7 @@ const antDecideAction = (game, ant) => {
         if (e.position == null) return false;
         if (isDiagonalMove(ant.position, e.position) && e.type == 'ANT') return false;
         return (
-          // (game.config.critterTypes.includes(e.type)) ||
+          (e.isCritter) ||
           ((e.type == 'ANT' || e.type == 'BASE') && e.playerID != ant.playerID)
         );
       });

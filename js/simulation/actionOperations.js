@@ -28,7 +28,10 @@ const {
 const {triggerExplosion} = require('../simulation/explosiveOperations');
 const {dealDamageToEntity} = require('../simulation/miscOperations');
 const {Entities} = require('../entities/registry');
-const {areNeighbors, getNeighborPositions} = require('../selectors/neighbors');
+const {
+  areNeighbors, getNeighborPositions,
+  getNeighborEntities
+} = require('../selectors/neighbors');
 
 
 const entityStartCurrentAction = (
@@ -76,7 +79,7 @@ const entityStartCurrentAction = (
         .filter(e => e.hp > 0);
       // deal damage and apply stun
       for (const target of targets) {
-        dealDamageToEntity(game, target, entity.damage);
+        dealDamageToEntity(game, target, entity.damage / 2);
       }
       break;
     }
