@@ -52,8 +52,10 @@ const initBaseState = (
     gaiaID: 0,
     numPlayers,
 
+    collected: 0,
     score: 0,
     numScorpionsSpawned: 0,
+    explosiveUses: {},
 
     // for tracking difficulty and missiles
     difficulty: 'NORMAL',
@@ -65,7 +67,6 @@ const initBaseState = (
     sentNukeWarning: false,
     sentBusterWarning: false,
 
-    explosiveUses: {},
 
     // for tracking game time
     prevTickTime: 0,

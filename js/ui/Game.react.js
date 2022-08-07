@@ -100,6 +100,20 @@ function Game(props: Props): React.Node {
           : null
       }
       <Canvas useFullScreen={state.screen != 'EDITOR'} />
+      <h3
+        style={{
+          position: 'absolute',
+          top: 10,
+          left: 0,
+          width: '100%',
+          pointerEvents: 'none',
+          textAlign: 'center',
+          textShadow: '-1px -1px 0 #FFF, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff',
+        }}
+      >
+        <div>Collected: {game.collected}</div>
+        <div>Score: {game.score}</div>
+      </h3>
       <Ticker ticker={game.ticker} />
       <MiniTicker miniTicker={game.miniTicker} />
     </div>
@@ -268,7 +282,7 @@ function configureMouseHandlers(game) {
     leftDown: (state, dispatch, gridPos) => {
       const game = state.game;
       if (game.explosiveReady) {
-        dispatch({type: 'USE_EXPLOSIVE', score: game.score, gridPos});
+        dispatch({type: 'USE_EXPLOSIVE', score: game.collected, gridPos});
       }
     },
     leftUp: (state, dispatch, gridPos) => {

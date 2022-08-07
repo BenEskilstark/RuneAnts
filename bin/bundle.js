@@ -960,8 +960,8 @@ var _require3 = require('../selectors/sprites'),
 
 var config = _extends({}, Agent.config, {
 
-  hp: 300,
-  maxHP: 300,
+  hp: 400,
+  maxHP: 400,
   damage: 10,
   width: 6,
   height: 6,
@@ -2724,6 +2724,8 @@ var doTick = function doTick(game) {
       time: 3000,
       max: 3000
     };
+
+    game.score = 10;
   }
 
   // game/frame timing
@@ -2831,8 +2833,8 @@ var updateAgents = function updateAgents(game) {
 //////////////////////////////////////////////////////////////////////////
 
 var updateExplosives = function updateExplosives(game) {
-  if (game.score > 0 && // game.explosiveReady = false &&
-  game.score % globalConfig.config.explosiveScoreMultiple == 0 && !game.explosiveUses[game.score]) {
+  if (game.collected > 0 && // game.explosiveReady = false &&
+  game.collected % globalConfig.config.explosiveScoreMultiple == 0 && !game.explosiveUses[game.collected]) {
     game.explosiveReady = true;
     game.ticker = {
       message: 'Explosive Ready!',
@@ -3109,6 +3111,7 @@ var updateBases = function updateBases(game) {
             ant.holdingIDs = [];
 
             if (base.playerID == game.playerID) {
+              game.collected += 1;
               game.score += 1;
             }
 
@@ -3460,22 +3463,26 @@ var renderView = function renderView(canvas, ctx2d, game, dims, isMini) {
   }
 
   // render score
-  renderScore(ctx, game.score, dims);
+  // renderScore(ctx, game.score, game.collected, dims);
+
 
   ctx.restore();
 };
 
-var renderScore = function renderScore(ctx, score, dims) {
-  var text = 'Score: ' + score;
-  var fontSize = Math.min(dims.viewWidth, dims.viewHeight) / 10;
+var renderScore = function renderScore(ctx, score, collected, dims) {
+  var text = 'Food Collected: ' + collected;
+  var scoreText = 'Score: ' + score;
+  var fontSize = Math.min(dims.viewWidth, dims.viewHeight) / 15;
 
   ctx.font = fontSize + 'px Arial';
-  ctx.fillStyle = "#000";
+  ctx.fillStyle = "steelblue";
 
   var _ctx$measureText = ctx.measureText(text),
       width = _ctx$measureText.width;
 
   ctx.fillText(text, dims.viewWidth / 2 - width / 2, 4);
+  width = ctx.measureText(scoreText).width;
+  ctx.fillText(scoreText, dims.viewWidth / 2 - width / 2, 6);
 };
 
 var refreshStaleImage = function refreshStaleImage(game, dims) {
@@ -5876,6 +5883,13 @@ var entityDie = function entityDie(game, entity) {
     }
   }
 
+  // score
+  if (entity.playerID == game.playerID) {
+    game.score -= 1;
+  } else if (entity.playerID == 2 || entity.playerID == '2') {
+    game.score += 1;
+  }
+
   removeEntity(game, entity);
 };
 
@@ -8088,8 +8102,10 @@ var initBaseState = function initBaseState(gridSize, numPlayers) {
     gaiaID: 0,
     numPlayers: numPlayers,
 
+    collected: 0,
     score: 0,
     numScorpionsSpawned: 0,
+    explosiveUses: {},
 
     // for tracking difficulty and missiles
     difficulty: 'NORMAL',
@@ -8100,8 +8116,6 @@ var initBaseState = function initBaseState(gridSize, numPlayers) {
     lastWaveTime: 0,
     sentNukeWarning: false,
     sentBusterWarning: false,
-
-    explosiveUses: {},
 
     // for tracking game time
     prevTickTime: 0,
@@ -10300,6 +10314,32 @@ function Game(props) {
     },
     state.screen == 'EDITOR' ? React.createElement(ExperimentalSidebar, { state: state, dispatch: dispatch }) : null,
     React.createElement(Canvas, { useFullScreen: state.screen != 'EDITOR' }),
+    React.createElement(
+      'h3',
+      {
+        style: {
+          position: 'absolute',
+          top: 10,
+          left: 0,
+          width: '100%',
+          pointerEvents: 'none',
+          textAlign: 'center',
+          textShadow: '-1px -1px 0 #FFF, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff'
+        }
+      },
+      React.createElement(
+        'div',
+        null,
+        'Collected: ',
+        game.collected
+      ),
+      React.createElement(
+        'div',
+        null,
+        'Score: ',
+        game.score
+      )
+    ),
     React.createElement(Ticker, { ticker: game.ticker }),
     React.createElement(MiniTicker, { miniTicker: game.miniTicker })
   );
@@ -10464,7 +10504,7 @@ function configureMouseHandlers(game) {
     leftDown: function leftDown(state, dispatch, gridPos) {
       var game = state.game;
       if (game.explosiveReady) {
-        dispatch({ type: 'USE_EXPLOSIVE', score: game.score, gridPos: gridPos });
+        dispatch({ type: 'USE_EXPLOSIVE', score: game.collected, gridPos: gridPos });
       }
     },
     leftUp: function leftUp(state, dispatch, gridPos) {

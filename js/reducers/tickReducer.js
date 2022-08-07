@@ -107,6 +107,8 @@ const doTick = (game: Game): Game => {
       time: 3000,
       max: 3000,
     };
+
+    game.score = 10;
   }
 
   // game/frame timing
@@ -199,9 +201,9 @@ const updateAgents = (game): void => {
 
 const updateExplosives = (game): void => {
   if (
-    game.score > 0 && // game.explosiveReady = false &&
-    game.score % globalConfig.config.explosiveScoreMultiple == 0 &&
-    !game.explosiveUses[game.score]
+    game.collected > 0 && // game.explosiveReady = false &&
+    game.collected % globalConfig.config.explosiveScoreMultiple == 0 &&
+    !game.explosiveUses[game.collected]
   ) {
     game.explosiveReady = true;
     game.ticker = {
@@ -475,6 +477,7 @@ const updateBases = (game): void => {
         ant.holdingIDs = [];
 
         if (base.playerID == game.playerID) {
+          game.collected += 1;
           game.score += 1;
         }
 

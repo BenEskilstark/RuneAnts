@@ -1,7 +1,6 @@
 // @flow
 
 const React = require('react');
-const axios = require('axios');
 const Divider = require('../ui/components/Divider.react');
 const Modal = require('../ui/components/Modal.react');
 const Button = require('../ui/components/Button.react');

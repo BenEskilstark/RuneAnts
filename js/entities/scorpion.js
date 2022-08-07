@@ -8,8 +8,8 @@ const {getScorpionSprite} = require('../selectors/sprites');
 const config = {
   ...Agent.config,
 
-  hp: 300,
-  maxHP: 300,
+  hp: 400,
+  maxHP: 400,
   damage: 10,
   width: 6,
   height: 6,

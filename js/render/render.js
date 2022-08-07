@@ -236,26 +236,33 @@ const renderView = (canvas, ctx2d, game, dims, isMini): void => {
   }
 
   // render score
-  renderScore(ctx, game.score, dims);
+  // renderScore(ctx, game.score, game.collected, dims);
 
 
   ctx.restore();
 }
 
-const renderScore = (ctx, score, dims) => {
-  const text = `Score: ${score}`
-  const fontSize = Math.min(dims.viewWidth, dims.viewHeight) / 10
+const renderScore = (ctx, score, collected, dims) => {
+  const text = `Food Collected: ${collected}`;
+  const scoreText = `Score: ${score}`;
+  const fontSize = Math.min(dims.viewWidth, dims.viewHeight) / 15;
 
-  ctx.font = `${fontSize}px Arial`
-  ctx.fillStyle = "#000"
+  ctx.font = `${fontSize}px Arial`;
+  ctx.fillStyle = "steelblue";
 
-  const { width } = ctx.measureText(text)
+  let { width } = ctx.measureText(text);
 
   ctx.fillText(
     text,
     dims.viewWidth / 2 - width / 2,
     4,
-  )
+  );
+  width = ctx.measureText(scoreText).width;
+  ctx.fillText(
+    scoreText,
+    dims.viewWidth / 2 - width / 2,
+    6,
+  );
 }
 
 

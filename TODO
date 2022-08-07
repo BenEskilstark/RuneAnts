@@ -5,7 +5,6 @@
 
 
 - - - - - POLISH - - - - -
-  - render score in UI/Game
   - Add music from Antocracy
   - make base look like an ant hill
   - favicon
@@ -13,7 +12,6 @@
 
 - - - - - - PLAY TESTING - - - - - - -
   - have ants go towards enemy colony too
-  - scorpions:
 
 
 - - - - - - RUNE INTEGRATION - - - - -

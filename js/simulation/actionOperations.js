@@ -218,6 +218,13 @@ const entityDie = (game: Game, entity: Entity): void => {
     }
   }
 
+  // score
+  if (entity.playerID == game.playerID) {
+    game.score -= 1;
+  } else if (entity.playerID == 2 || entity.playerID == '2') {
+    game.score += 1;
+  }
+
   removeEntity(game, entity);
 };
 
