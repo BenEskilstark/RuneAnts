@@ -17,6 +17,16 @@ var config = {
 
   audioFiles: [{ path: 'audio/BeetleGuts.mp3', type: 'mp3' }, { path: 'audio/Exploration.mp3', type: 'mp3' }, { path: 'audio/FairlyConstantSuspense.mp3', type: 'mp3' }, { path: 'audio/GatherersRemix.mp3', type: 'mp3' }, { path: 'audio/MarchOfTheAnts.mp3', type: 'mp3' }, { path: 'audio/QueenAntsGambit.mp3', type: 'mp3' }, { path: 'audio/SidewalkLife.mp3', type: 'mp3' }, { path: 'audio/SlowSodaCanSongP1.mp3', type: 'mp3' }, { path: 'audio/SlowSodaCanSongP2.mp3', type: 'mp3' }, { path: 'audio/SpanishAnts.mp3', type: 'mp3' }, { path: 'audio/TheQueenHerMajesty.mp3', type: 'mp3' }],
 
+  imageFiles: {
+    FOOD: './img/FOOD.png',
+    STONE: './img/STONE.png',
+    BASE: './img/Base1.png',
+    PHEROMONE: './img/Pheromones.png',
+    ANT: './img/Ant2.png',
+    RED_ANT: './img/Ant3.png',
+    SCORPION: './img/Scorpion1.png'
+  },
+
   dispersingPheromoneUpdateRate: 6,
   gravity: -100,
 

@@ -203,7 +203,10 @@ function playLevel(store, levelName: string, setLoadingProgress, setIsLoaded): v
       progress = state.game.loadingProgress;
       setLoadingProgress(progress);
     }
-    if (progress < 100) {
+    if (
+      progress < 100 ||
+      Object.keys(state.sprites).length < Object.keys(globalConfig.config.imageFiles).length
+    ) {
       setTimeout(checkLoading, 100);
     } else {
       setIsLoaded(true);

@@ -20,6 +20,7 @@
   - Logo: 600x600 png
   - game over
     - call Rune.gameOver(), how to indicate win vs loss?
+  - test music in Rune CLI
 
 
 - - - - OPTIONAL MECHANICS - - - - -

@@ -17,6 +17,16 @@ var config = {
 
   audioFiles: [{ path: 'audio/BeetleGuts.mp3', type: 'mp3' }, { path: 'audio/Exploration.mp3', type: 'mp3' }, { path: 'audio/FairlyConstantSuspense.mp3', type: 'mp3' }, { path: 'audio/GatherersRemix.mp3', type: 'mp3' }, { path: 'audio/MarchOfTheAnts.mp3', type: 'mp3' }, { path: 'audio/QueenAntsGambit.mp3', type: 'mp3' }, { path: 'audio/SidewalkLife.mp3', type: 'mp3' }, { path: 'audio/SlowSodaCanSongP1.mp3', type: 'mp3' }, { path: 'audio/SlowSodaCanSongP2.mp3', type: 'mp3' }, { path: 'audio/SpanishAnts.mp3', type: 'mp3' }, { path: 'audio/TheQueenHerMajesty.mp3', type: 'mp3' }],
 
+  imageFiles: {
+    FOOD: './img/FOOD.png',
+    STONE: './img/STONE.png',
+    BASE: './img/Base1.png',
+    PHEROMONE: './img/Pheromones.png',
+    ANT: './img/Ant2.png',
+    RED_ANT: './img/Ant3.png',
+    SCORPION: './img/Scorpion1.png'
+  },
+
   dispersingPheromoneUpdateRate: 6,
   gravity: -100,
 
@@ -9124,23 +9134,18 @@ module.exports = { initRainSystem: initRainSystem };
 },{"../config":1,"../simulation/pheromones":49,"../utils/stochastic":94}],59:[function(require,module,exports){
 'use strict';
 
+var _require = require('../config'),
+    config = _require.config;
+
 var initSpriteSheetSystem = function initSpriteSheetSystem(store) {
   // TODO: don't load sprites if they're already loaded
   var dispatch = store.dispatch;
 
   var state = store.getState();
 
-  loadSprite(dispatch, state, 'FOOD', './img/FOOD.png');
-  loadSprite(dispatch, state, 'DIRT', './img/DIRT.png');
-  loadSprite(dispatch, state, 'STONE', './img/STONE.png');
-
-  loadSprite(dispatch, state, 'BASE', './img/Base1.png');
-
-  loadSprite(dispatch, state, 'PHEROMONE', './img/Pheromones.png');
-
-  loadSprite(dispatch, state, 'ANT', './img/Ant2.png');
-  loadSprite(dispatch, state, 'RED_ANT', './img/Ant3.png');
-  loadSprite(dispatch, state, 'SCORPION', './img/Scorpion1.png');
+  for (var sprite in config.imageFiles) {
+    loadSprite(dispatch, state, sprite, config.imageFiles[sprite]);
+  }
 };
 
 var loadSprite = function loadSprite(dispatch, state, name, src) {
@@ -9150,7 +9155,7 @@ var loadSprite = function loadSprite(dispatch, state, name, src) {
   // ) return;
   var img = new Image();
   img.addEventListener('load', function () {
-    //  console.log("loaded " + src + " spritesheet");
+    console.log("loaded " + src + " spritesheet");
     dispatch({
       type: 'SET_SPRITE_SHEET',
       name: name,
@@ -9161,7 +9166,7 @@ var loadSprite = function loadSprite(dispatch, state, name, src) {
 };
 
 module.exports = { initSpriteSheetSystem: initSpriteSheetSystem };
-},{}],60:[function(require,module,exports){
+},{"../config":1}],60:[function(require,module,exports){
 'use strict';
 
 var levels = require('../levels/levels');
@@ -12123,7 +12128,7 @@ function playLevel(store, levelName, setLoadingProgress, setIsLoaded) {
       progress = state.game.loadingProgress;
       setLoadingProgress(progress);
     }
-    if (progress < 100) {
+    if (progress < 100 || Object.keys(state.sprites).length < Object.keys(globalConfig.config.imageFiles).length) {
       setTimeout(checkLoading, 100);
     } else {
       setIsLoaded(true);

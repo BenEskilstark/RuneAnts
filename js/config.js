@@ -26,6 +26,16 @@ const config = {
     {path: 'audio/TheQueenHerMajesty.mp3', type: 'mp3'},
   ],
 
+  imageFiles: {
+    FOOD: './img/FOOD.png',
+    STONE: './img/STONE.png',
+    BASE: './img/Base1.png',
+    PHEROMONE: './img/Pheromones.png',
+    ANT: './img/Ant2.png',
+    RED_ANT: './img/Ant3.png',
+    SCORPION: './img/Scorpion1.png',
+  },
+
   dispersingPheromoneUpdateRate: 6,
   gravity: -100,
 
