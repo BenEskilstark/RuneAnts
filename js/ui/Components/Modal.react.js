@@ -49,7 +49,7 @@ function Modal(props: Props): React.Node {
         color: '#46403a',
         textAlign: 'center',
         width,
-        top: isMobile() ? 0 : (canvasRect.height - height) / 2,
+        top: (canvasRect.height - height) / 2,
         left: (rect.width - width) / 2,
       }}
     >

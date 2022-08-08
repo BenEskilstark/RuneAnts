@@ -14,14 +14,11 @@ const config = {
 
   audioFiles: [
     {path: 'audio/BeetleGuts.mp3', type: 'mp3'},
-    {path: 'audio/Exploration.mp3', type: 'mp3'},
     {path: 'audio/FairlyConstantSuspense.mp3', type: 'mp3'},
     {path: 'audio/GatherersRemix.mp3', type: 'mp3'},
     {path: 'audio/MarchOfTheAnts.mp3', type: 'mp3'},
-    {path: 'audio/QueenAntsGambit.mp3', type: 'mp3'},
     {path: 'audio/SidewalkLife.mp3', type: 'mp3'},
     {path: 'audio/SlowSodaCanSongP1.mp3', type: 'mp3'},
-    {path: 'audio/SlowSodaCanSongP2.mp3', type: 'mp3'},
     {path: 'audio/SpanishAnts.mp3', type: 'mp3'},
     {path: 'audio/TheQueenHerMajesty.mp3', type: 'mp3'},
   ],

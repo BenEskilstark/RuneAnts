@@ -15,7 +15,7 @@ var config = {
   cellWidth: 20,
   cellHeight: 16,
 
-  audioFiles: [{ path: 'audio/BeetleGuts.mp3', type: 'mp3' }, { path: 'audio/Exploration.mp3', type: 'mp3' }, { path: 'audio/FairlyConstantSuspense.mp3', type: 'mp3' }, { path: 'audio/GatherersRemix.mp3', type: 'mp3' }, { path: 'audio/MarchOfTheAnts.mp3', type: 'mp3' }, { path: 'audio/QueenAntsGambit.mp3', type: 'mp3' }, { path: 'audio/SidewalkLife.mp3', type: 'mp3' }, { path: 'audio/SlowSodaCanSongP1.mp3', type: 'mp3' }, { path: 'audio/SlowSodaCanSongP2.mp3', type: 'mp3' }, { path: 'audio/SpanishAnts.mp3', type: 'mp3' }, { path: 'audio/TheQueenHerMajesty.mp3', type: 'mp3' }],
+  audioFiles: [{ path: 'audio/BeetleGuts.mp3', type: 'mp3' }, { path: 'audio/FairlyConstantSuspense.mp3', type: 'mp3' }, { path: 'audio/GatherersRemix.mp3', type: 'mp3' }, { path: 'audio/MarchOfTheAnts.mp3', type: 'mp3' }, { path: 'audio/SidewalkLife.mp3', type: 'mp3' }, { path: 'audio/SlowSodaCanSongP1.mp3', type: 'mp3' }, { path: 'audio/SpanishAnts.mp3', type: 'mp3' }, { path: 'audio/TheQueenHerMajesty.mp3', type: 'mp3' }],
 
   imageFiles: {
     FOOD: './img/FOOD.png',
@@ -8440,7 +8440,7 @@ var handleGameWon = function handleGameWon(store, dispatch, state, reason) {
   // give a bonus to score based on how fast you won
   // where winning faster gives an exponentially bigger bonus
   dispatch({ type: 'SET_SCORE',
-    score: Math.ceil(game.score * (1 + 100000000 ** (1000 / game.time)))
+    score: Math.min(Math.ceil(game.score * (1 + 100000000 ** (1000 / game.time))), 1000000000)
   });
 
   var returnButton = {
@@ -8466,7 +8466,7 @@ var handleGameWon = function handleGameWon(store, dispatch, state, reason) {
   dispatch({ type: 'SET_MODAL',
     modal: React.createElement(Modal, {
       title: 'Level Won',
-      body: 'Level Won',
+      body: 'You destroyed the enemy colony and scored: ' + game.score,
       buttons: buttons
     })
   });
@@ -9722,7 +9722,7 @@ function Modal(props) {
         color: '#46403a',
         textAlign: 'center',
         width: width,
-        top: isMobile() ? 0 : (canvasRect.height - height) / 2,
+        top: (canvasRect.height - height) / 2,
         left: (rect.width - width) / 2
       }
     },
@@ -10458,10 +10458,10 @@ function configureMouseHandlers(game) {
         property: 'prevInteractPos',
         value: null
       });
-    },
-    scroll: function scroll(state, dispatch, zoom) {
-      dispatch({ type: 'INCREMENT_ZOOM', zoom: zoom });
     }
+    // scroll: (state, dispatch, zoom) => {
+    //   dispatch({type: 'INCREMENT_ZOOM', zoom});
+    // },
   };
   return handlers;
 }

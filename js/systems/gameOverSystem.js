@@ -91,7 +91,10 @@ const handleGameWon = (store, dispatch, state, reason): void => {
   // give a bonus to score based on how fast you won
   // where winning faster gives an exponentially bigger bonus
   dispatch({type: 'SET_SCORE',
-    score: Math.ceil(game.score * (1 + 100000000 ** (1000 / game.time))),
+    score: Math.min(
+      Math.ceil(game.score * (1 + 100000000 ** (1000 / game.time))),
+      1000000000,
+    ),
   });
 
   const returnButton = {
@@ -117,7 +120,7 @@ const handleGameWon = (store, dispatch, state, reason): void => {
   dispatch({type: 'SET_MODAL',
     modal: (<Modal
       title={'Level Won'}
-      body={'Level Won'}
+      body={`You destroyed the enemy colony and scored: ${game.score}`}
       buttons={buttons}
     />),
   });
