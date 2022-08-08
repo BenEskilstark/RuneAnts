@@ -51,7 +51,7 @@ const handleGameLoss = (store, dispatch, state, reason): void => {
   dispatch({type: 'STOP_TICK'});
 
   const returnButton = {
-    label: 'Back to Main Menu',
+    label: 'Restart',
     onClick: () => {
       dispatch({type: 'DISMISS_MODAL'});
       dispatch({type: 'RETURN_TO_LOBBY'});
@@ -72,7 +72,7 @@ const handleGameLoss = (store, dispatch, state, reason): void => {
 
   const body = (
     <div>
-    {`Your base was destroyed! You survived ${game.missilesSurvived} missiles`}
+    {`Your colony was destroyed!`}
     </div>
   );
 
@@ -88,24 +88,14 @@ const handleGameLoss = (store, dispatch, state, reason): void => {
 const handleGameWon = (store, dispatch, state, reason): void => {
   const {game} = state;
   dispatch({type: 'STOP_TICK'});
+  // give a bonus to score based on how fast you won
+  // where winning faster gives an exponentially bigger bonus
+  dispatch({type: 'SET_SCORE',
+    score: Math.ceil(game.score * (1 + 100000000 ** (1000 / game.time))),
+  });
 
-  // set screen size  to be zoomed out
-  // let ratio = game.viewHeight / game.viewWidth;
-  // let viewWidth = game.gridWidth;
-  // let viewHeight = viewWidth * ratio;
-  // dispatch({type: 'SET_VIEW_POS',
-  //   viewPos: {x: 0, y: 0}, viewWidth, viewHeight, rerender: true,
-  // });
-
-  const contButton = {
-    label: 'Continue',
-    onClick: () => {
-      dispatch({type: 'DISMISS_MODAL'});
-      dispatch({type: 'START_TICK'});
-    }
-  };
   const returnButton = {
-    label: 'Back to Main Menu',
+    label: 'Restart',
     onClick: () => {
       dispatch({type: 'DISMISS_MODAL'});
       dispatch({type: 'RETURN_TO_LOBBY'});
@@ -119,7 +109,7 @@ const handleGameWon = (store, dispatch, state, reason): void => {
       render(store.getState().game); // HACK for level editor
     },
   };
-  const buttons = [contButton, returnButton];
+  const buttons = [returnButton];
   if (state.screen == 'EDITOR') {
     buttons.push(resetButton);
   }

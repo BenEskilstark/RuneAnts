@@ -15,13 +15,13 @@ var config = {
   cellWidth: 20,
   cellHeight: 16,
 
-  audioFiles: [{ path: 'audio/Song Oct. 9.wav', type: 'wav' }],
+  audioFiles: [{ path: 'audio/BeetleGuts.mp3', type: 'mp3' }, { path: 'audio/Exploration.mp3', type: 'mp3' }, { path: 'audio/FairlyConstantSuspense.mp3', type: 'mp3' }, { path: 'audio/GatherersRemix.mp3', type: 'mp3' }, { path: 'audio/MarchOfTheAnts.mp3', type: 'mp3' }, { path: 'audio/QueenAntsGambit.mp3', type: 'mp3' }, { path: 'audio/SidewalkLife.mp3', type: 'mp3' }, { path: 'audio/SlowSodaCanSongP1.mp3', type: 'mp3' }, { path: 'audio/SlowSodaCanSongP2.mp3', type: 'mp3' }, { path: 'audio/SpanishAnts.mp3', type: 'mp3' }, { path: 'audio/TheQueenHerMajesty.mp3', type: 'mp3' }],
 
   dispersingPheromoneUpdateRate: 6,
   gravity: -100,
 
   foodSpawnInterval: 1000 * 15,
-  minFood: 50,
+  minFood: 75,
 
   explosiveScoreMultiple: 60
 
@@ -63,7 +63,7 @@ var pheromones = {
   },
   FOLLOW: {
     quantity: 100,
-    decayAmount: 100,
+    decayAmount: 50,
     isDispersing: true,
     decayRate: 0.1, // how much it decays per tick
     color: 'rgb(210, 105, 30)',
@@ -1426,6 +1426,13 @@ var gameReducer = function gameReducer(game, action) {
         }
         return game;
       }
+    case 'SET_SCORE':
+      {
+        var score = action.score;
+
+        game.score = score;
+        return game;
+      }
     case 'SPAWN_SCORPION':
       {
         var _pos = action.pos;
@@ -1441,10 +1448,10 @@ var gameReducer = function gameReducer(game, action) {
       }
     case 'USE_EXPLOSIVE':
       {
-        var score = action.score,
+        var _score = action.score,
             gridPos = action.gridPos;
 
-        game.explosiveUses[score] = true;
+        game.explosiveUses[_score] = true;
         addEntity(game, Entities.DYNAMITE.make(game, gridPos, game.playerID));
         game.explosiveReady = false;
         game.ticker = null;
@@ -2340,6 +2347,7 @@ var rootReducer = function rootReducer(state, action) {
     case 'SET':
     case 'SPAWN_FOOD':
     case 'SPAWN_SCORPION':
+    case 'SET_SCORE':
     case 'USE_EXPLOSIVE':
     case 'UPDATE_ALL_PHEROMONES':
     case 'SET_GAME_OVER':
@@ -8106,6 +8114,7 @@ var initBaseState = function initBaseState(gridSize, numPlayers) {
     score: 0,
     numScorpionsSpawned: 0,
     explosiveUses: {},
+    prevInteractPos: null,
 
     // for tracking difficulty and missiles
     difficulty: 'NORMAL',
@@ -8317,7 +8326,6 @@ module.exports = { initFoodSpawnSystem: initFoodSpawnSystem };
 'use strict';
 
 var React = require('react');
-var axios = require('axios');
 var Divider = require('../ui/components/Divider.react');
 var Modal = require('../ui/components/Modal.react');
 var Button = require('../ui/components/Button.react');
@@ -8381,7 +8389,7 @@ var handleGameLoss = function handleGameLoss(store, dispatch, state, reason) {
   dispatch({ type: 'STOP_TICK' });
 
   var returnButton = {
-    label: 'Back to Main Menu',
+    label: 'Restart',
     onClick: function onClick() {
       dispatch({ type: 'DISMISS_MODAL' });
       dispatch({ type: 'RETURN_TO_LOBBY' });
@@ -8403,7 +8411,7 @@ var handleGameLoss = function handleGameLoss(store, dispatch, state, reason) {
   var body = React.createElement(
     'div',
     null,
-    'Your base was destroyed! You survived ' + game.missilesSurvived + ' missiles'
+    'Your colony was destroyed!'
   );
 
   dispatch({ type: 'SET_MODAL',
@@ -8419,24 +8427,14 @@ var handleGameWon = function handleGameWon(store, dispatch, state, reason) {
   var game = state.game;
 
   dispatch({ type: 'STOP_TICK' });
+  // give a bonus to score based on how fast you won
+  // where winning faster gives an exponentially bigger bonus
+  dispatch({ type: 'SET_SCORE',
+    score: Math.ceil(game.score * (1 + 100000000 ** (1000 / game.time)))
+  });
 
-  // set screen size  to be zoomed out
-  // let ratio = game.viewHeight / game.viewWidth;
-  // let viewWidth = game.gridWidth;
-  // let viewHeight = viewWidth * ratio;
-  // dispatch({type: 'SET_VIEW_POS',
-  //   viewPos: {x: 0, y: 0}, viewWidth, viewHeight, rerender: true,
-  // });
-
-  var contButton = {
-    label: 'Continue',
-    onClick: function onClick() {
-      dispatch({ type: 'DISMISS_MODAL' });
-      dispatch({ type: 'START_TICK' });
-    }
-  };
   var returnButton = {
-    label: 'Back to Main Menu',
+    label: 'Restart',
     onClick: function onClick() {
       dispatch({ type: 'DISMISS_MODAL' });
       dispatch({ type: 'RETURN_TO_LOBBY' });
@@ -8450,7 +8448,7 @@ var handleGameWon = function handleGameWon(store, dispatch, state, reason) {
       render(store.getState().game); // HACK for level editor
     }
   };
-  var buttons = [contButton, returnButton];
+  var buttons = [returnButton];
   if (state.screen == 'EDITOR') {
     buttons.push(resetButton);
   }
@@ -8465,7 +8463,7 @@ var handleGameWon = function handleGameWon(store, dispatch, state, reason) {
 };
 
 module.exports = { initGameOverSystem: initGameOverSystem };
-},{"../render/render":32,"../ui/components/Button.react":82,"../ui/components/Divider.react":84,"../ui/components/Modal.react":87,"../utils/gridHelpers":91,"../utils/helpers":92,"../utils/vectors":95,"axios":98,"react":156}],54:[function(require,module,exports){
+},{"../render/render":32,"../ui/components/Button.react":82,"../ui/components/Divider.react":84,"../ui/components/Modal.react":87,"../utils/gridHelpers":91,"../utils/helpers":92,"../utils/vectors":95,"react":156}],54:[function(require,module,exports){
 'use strict';
 
 var initKeyboardControlsSystem = function initKeyboardControlsSystem(store) {
@@ -10181,6 +10179,7 @@ var Button = require('./Components/Button.react');
 // const Canvas = require('./Canvas.react');
 
 var _require = require('bens_ui_components'),
+    AudioWidget = _require.AudioWidget,
     Canvas = _require.Canvas;
 
 var Checkbox = require('./Components/Checkbox.react');
@@ -10341,7 +10340,17 @@ function Game(props) {
       )
     ),
     React.createElement(Ticker, { ticker: game.ticker }),
-    React.createElement(MiniTicker, { miniTicker: game.miniTicker })
+    React.createElement(AudioWidget, {
+      isShuffled: true,
+      audioFiles: config.audioFiles,
+      isMuted: false,
+      style: {
+        position: 'absolute',
+        top: 4,
+        left: 4,
+        display: 'none'
+      }
+    })
   );
 }
 
@@ -10358,97 +10367,25 @@ function Game(props) {
 function registerHotkeys(dispatch) {
   dispatch({
     type: 'SET_HOTKEY', press: 'onKeyDown',
-    key: 'E',
+    key: 'space',
     fn: function fn(s) {
       var game = s.getState().game;
-      var controlledEntity = game.controlledEntity;
-      if (!controlledEntity) return;
-
-      var entityAction = getControlledEntityInteraction(game, controlledEntity);
-      if ((entityAction.type == 'PICKUP' || entityAction.type == 'PUTDOWN') && (isActionTypeQueued(controlledEntity, 'PICKUP') || isActionTypeQueued(controlledEntity, 'PUTDOWN'))) {
-        return;
-      }
-      dispatch({
-        type: 'ENQUEUE_ENTITY_ACTION',
-        entity: controlledEntity,
-        entityAction: entityAction
-      });
-    }
-  });
-
-  // manning:
-  dispatch({
-    type: 'SET_HOTKEY', press: 'onKeyDown',
-    key: 'M',
-    fn: function fn(s) {
-      var game = s.getState().game;
-      var controlledEntity = game.controlledEntity;
-      if (!controlledEntity) return;
-
-      var _getManningAction = getManningAction(game),
-          entity = _getManningAction.entity,
-          entityAction = _getManningAction.entityAction;
-
-      if (entityAction) {
-        dispatch({
-          type: 'ENQUEUE_ENTITY_ACTION',
-          entity: entity,
-          entityAction: entityAction
-        });
+      if (game.tickInterval) {
+        s.dispatch({ type: 'STOP_TICK' });
+      } else {
+        s.dispatch({ type: 'START_TICK' });
       }
     }
   });
-
   dispatch({
     type: 'SET_HOTKEY', press: 'onKeyDown',
-    key: 'up',
+    key: 'P',
     fn: function fn(s) {
       var game = s.getState().game;
-      if (game.focusedEntity) return;
-      var moveAmount = Math.round(Math.max(1, game.gridHeight / 10));
-      dispatch({
-        type: 'SET_VIEW_POS', viewPos: add(game.viewPos, { x: 0, y: moveAmount })
+      s.dispatch({ type: 'SET',
+        property: 'showPheromoneValues',
+        value: !game.showPheromoneValues
       });
-      render(game);
-    }
-  });
-  dispatch({
-    type: 'SET_HOTKEY', press: 'onKeyDown',
-    key: 'down',
-    fn: function fn(s) {
-      var game = s.getState().game;
-      if (game.focusedEntity) return;
-      var moveAmount = Math.round(Math.max(1, game.gridHeight / 10));
-      dispatch({
-        type: 'SET_VIEW_POS', viewPos: add(game.viewPos, { x: 0, y: -1 * moveAmount })
-      });
-      render(game);
-    }
-  });
-  dispatch({
-    type: 'SET_HOTKEY', press: 'onKeyDown',
-    key: 'left',
-    fn: function fn(s) {
-      var game = s.getState().game;
-      if (game.focusedEntity) return;
-      var moveAmount = Math.round(Math.max(1, game.gridWidth / 10));
-      dispatch({
-        type: 'SET_VIEW_POS', viewPos: add(game.viewPos, { x: -1 * moveAmount, y: 0 })
-      });
-      render(game);
-    }
-  });
-  dispatch({
-    type: 'SET_HOTKEY', press: 'onKeyDown',
-    key: 'right',
-    fn: function fn(s) {
-      var game = s.getState().game;
-      if (game.focusedEntity) return;
-      var moveAmount = Math.round(Math.max(1, game.gridWidth / 10));
-      dispatch({
-        type: 'SET_VIEW_POS', viewPos: add(game.viewPos, { x: moveAmount, y: 0 })
-      });
-      render(game);
     }
   });
 }
@@ -10457,48 +10394,52 @@ function configureMouseHandlers(game) {
   var handlers = {
     mouseMove: function mouseMove(state, dispatch, gridPos) {
       var game = state.game;
-      if (game.mouse.isLeftDown) {
-        var prevPos = game.prevInteractPos;
-        // const prevPos = game.mouse.downPos;
-        if (prevPos) {
-          var quantity = getPheromonesInCell(game.grid, prevPos, game.playerID).FOLLOW || pheromones.FOLLOW.quantity * 0.75;
-          var pos = prevPos;
+      if (!game.mouse.isLeftDown) {
+        return;
+      }
+      // const prevPos = game.mouse.downPos;
+      if (game.prevInteractPos) {
+        var prevPos = game.prevInteractPos.pos;
+        var quantity = game.prevInteractPos.quantity;
+        // getPheromonesInCell(game.grid, prevPos, game.playerID).FOLLOW;
+        // || pheromones.FOLLOW.quantity * 0.75;
+        // console.log('quantity', quantity, prevPos, gridPos);
+        var pos = prevPos;
+        dispatch({ type: 'FILL_PHEROMONE',
+          gridPos: pos,
+          pheromoneType: 'FOLLOW',
+          playerID: state.game.playerID,
+          quantity: quantity
+        });
+        while (!equals(pos, gridPos)) {
+          quantity += 1;
+          var diff = subtract(pos, gridPos);
+          pos = {
+            x: diff.x == 0 ? pos.x : pos.x - diff.x / Math.abs(diff.x),
+            y: diff.y == 0 ? pos.y : pos.y - diff.y / Math.abs(diff.y)
+          };
           dispatch({ type: 'FILL_PHEROMONE',
             gridPos: pos,
             pheromoneType: 'FOLLOW',
             playerID: state.game.playerID,
             quantity: quantity
           });
-          while (!equals(pos, gridPos)) {
-            quantity += 1;
-            var diff = subtract(pos, gridPos);
-            pos = {
-              x: diff.x == 0 ? pos.x : pos.x - diff.x / Math.abs(diff.x),
-              y: diff.y == 0 ? pos.y : pos.y - diff.y / Math.abs(diff.y)
-            };
-            dispatch({ type: 'FILL_PHEROMONE',
-              gridPos: pos,
-              pheromoneType: 'FOLLOW',
-              playerID: state.game.playerID,
-              quantity: quantity
-            });
-          }
-          dispatch({ type: 'SET',
-            property: 'prevInteractPos',
-            value: gridPos
-          });
-        } else {
-          dispatch({ type: 'FILL_PHEROMONE',
-            gridPos: gridPos,
-            pheromoneType: 'FOLLOW',
-            playerID: state.game.playerID,
-            quantity: pheromones.FOLLOW.quantity * 0.75
-          });
-          dispatch({ type: 'SET',
-            property: 'prevInteractPos',
-            value: gridPos
-          });
         }
+        dispatch({ type: 'SET',
+          property: 'prevInteractPos',
+          value: { pos: gridPos, quantity: quantity }
+        });
+      } else {
+        dispatch({ type: 'FILL_PHEROMONE',
+          gridPos: gridPos,
+          pheromoneType: 'FOLLOW',
+          playerID: state.game.playerID,
+          quantity: pheromones.FOLLOW.quantity * 0.75
+        });
+        dispatch({ type: 'SET',
+          property: 'prevInteractPos',
+          value: { pos: gridPos, quantity: pheromones.FOLLOW.quantity * 0.75 }
+        });
       }
     },
     leftDown: function leftDown(state, dispatch, gridPos) {
@@ -11954,7 +11895,7 @@ function Lobby(props) {
       level = _useState2[0],
       setLevel = _useState2[1];
 
-  var _useState3 = useState(''),
+  var _useState3 = useState('Loading..'),
       _useState4 = _slicedToArray(_useState3, 2),
       loading = _useState4[0],
       setLoading = _useState4[1];
@@ -12010,173 +11951,26 @@ function Lobby(props) {
 
   // on start click
   useEffect(function () {
-    if (loading != '') {
-      var progress = 0;
-      var _state = store.getState();
-      if (_state.game != null) {
-        progress = _state.game.loadingProgress;
-      }
-      var title = 'perimeter';
-      var body = 'Keep your underground base alive as long as you can while missiles ' + 'rain down from the sky! Combine the resources around you in novel ways to create ' + 'the alloys used to build anti-missile turrets and generate the electricity to ' + ' power them. Can you create an impenetrable perimeter?';
-      if (isMobile()) {
-        title = '~~Experimental~~ Mobile Mode';
-        body = 'Sorry, the game is not yet ready to play on mobile devices :( ' + 'try going to this link on a computer instead';
-      }
-      dispatch({ type: 'SET_MODAL', modal: React.createElement(Modal, {
-          title: title,
-          body: body,
-          buttons: [{
-            label: !isLoaded ? '(Loading... ' + progress.toFixed(1) + '%)' : 'Begin',
-            disabled: !isLoaded,
-            onClick: function onClick() {
-              if (isLoaded) {
-                // const isUnique = !!!localStorage.getItem('revisit_' + level);
-                // axios
-                //   .post('/visit', {
-                //     hostname: window.location.hostname, path: '/game', map: level, isUnique,
-                //   })
-                //   .then(() => {
-                //     localStorage.setItem('revisit_' + level, true);
-                //   });
-                dispatch({ type: 'DISMISS_MODAL' });
-                dispatch({ type: 'SET_SCREEN', screen: 'GAME' });
-                dispatch({ type: 'START_TICK' });
-                dispatch({ type: 'SET_DIFFICULTY', difficulty: difficulty });
-                if (difficulty == 'EASY') {
-                  dispatch({ type: 'PAUSE_MISSILES', pauseMissiles: true });
-                }
-              }
-            }
-          }]
-        }) });
-    }
     if (loading == 'Loading..') {
       setLoading('Loading...');
       setTimeout(function () {
         return playLevel(store, level, setLoadingProgress, setIsLoaded);
       }, 100);
     }
+    if (loading != '') {
+      var progress = 0;
+      var _state = store.getState();
+      if (_state.game != null) {
+        progress = _state.game.loadingProgress;
+      }
+      if (isLoaded) {
+        dispatch({ type: 'SET_SCREEN', screen: 'GAME' });
+        dispatch({ type: 'START_TICK' });
+      }
+    }
   }, [loading, isLoaded, loadingProgress]);
 
-  return React.createElement(
-    'span',
-    null,
-    React.createElement(QuitButton, { isInGame: false, dispatch: dispatch }),
-    React.createElement(
-      'div',
-      {
-        style: {
-          margin: 'auto',
-          maxWidth: 700,
-          padding: 8,
-          textAlign: 'center',
-          fontFamily: '"Courier New", sans-serif'
-        }
-      },
-      React.createElement(
-        'div',
-        {
-          style: {
-            width: '100%',
-            height: '100%',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            display: 'inline',
-            zIndex: -1,
-            opacity: 0.3
-          }
-        },
-        React.createElement('img', {
-          width: width,
-          height: height,
-          src: 'img/perimeterBackground1.gif'
-        })
-      ),
-      React.createElement(
-        'h1',
-        null,
-        'perimeter'
-      ),
-      React.createElement(
-        'h3',
-        null,
-        '~Beta~'
-      ),
-      React.createElement(
-        'h2',
-        { style: { fontSize: '4em', marginBottom: 0 } },
-        'Play:'
-      ),
-      React.createElement(Button, {
-        style: {
-          width: '100%',
-          height: 50,
-          fontSize: '2em',
-          borderRadius: '8px',
-          cursor: 'pointer'
-        },
-        disabled: loading != '' || isLoaded,
-        label: 'Easy',
-        onClick: function onClick() {
-          setDifficulty('EASY');
-          setLoading("Loading..");
-        }
-      }),
-      React.createElement(
-        'div',
-        { style: { marginBottom: 12 } },
-        'Missiles don\'t start coming at you until you\'re ready'
-      ),
-      React.createElement(Button, {
-        style: {
-          width: '100%',
-          height: 50,
-          fontSize: '2em',
-          borderRadius: '8px',
-          cursor: 'pointer'
-        },
-        disabled: loading != '' || isLoaded,
-        label: 'Normal',
-        onClick: function onClick() {
-          setDifficulty('NORMAL');
-          setLoading("Loading..");
-        }
-      }),
-      React.createElement(
-        'div',
-        { style: { marginBottom: 12 } },
-        'Missiles come at you in waves of increasing difficulty'
-      ),
-      React.createElement(Button, {
-        style: {
-          width: '100%',
-          height: 50,
-          fontSize: '2em',
-          borderRadius: '8px',
-          cursor: 'pointer'
-        },
-        disabled: loading != '' || isLoaded,
-        label: 'Hard',
-        onClick: function onClick() {
-          setDifficulty('HARD');
-          setLoading("Loading..");
-        }
-      }),
-      React.createElement(
-        'div',
-        { style: { marginBottom: 12 } },
-        'Missiles come at you relentlessly from the start'
-      ),
-      React.createElement(
-        'h3',
-        null,
-        loading
-      )
-    ),
-    React.createElement(LevelEditor, { dispatch: dispatch }),
-    React.createElement(MadeBy, null)
-  );
+  return React.createElement('span', null);
 }
 
 function MadeBy(props) {

@@ -5,31 +5,25 @@
 
 
 - - - - - POLISH - - - - -
-  - Add music from Antocracy
   - make base look like an ant hill
   - favicon
 
 
 - - - - - - PLAY TESTING - - - - - - -
-  - have ants go towards enemy colony too
+  - Score
 
 
 - - - - - - RUNE INTEGRATION - - - - -
-  - Score
-    - how to make score fit linear pattern?
-    - can score go down? how to handle win/loss (10x multiplier for win)?
-  - get rid of all localStore/api call stuff
   - Rune script include
   - Rune api calls
-  - Remove main menu
   - make sure everything is below 25MB
   - Logo: 600x600 png
   - game over
     - call Rune.gameOver(), how to indicate win vs loss?
-    - winning gives big score boost?
 
 
-- - - - GAME MECHANICS - - - - -
+- - - - OPTIONAL MECHANICS - - - - -
+  - have ants go towards enemy colony too
   - AI gets explosives?
   - Spider, beetle, scorpion instead of plain food, at least after a bit
   - Enemies spawn faster but you're stronger?

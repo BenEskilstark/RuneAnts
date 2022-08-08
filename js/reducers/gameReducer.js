@@ -42,6 +42,11 @@ const gameReducer = (game: Game, action: Action): Game => {
       }
       return game;
     }
+    case 'SET_SCORE': {
+      const {score} = action;
+      game.score = score;
+      return game;
+    }
     case 'SPAWN_SCORPION': {
       const {pos} = action;
       game.numScorpionsSpawned++;

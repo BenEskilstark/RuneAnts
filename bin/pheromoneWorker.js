@@ -15,13 +15,13 @@ var config = {
   cellWidth: 20,
   cellHeight: 16,
 
-  audioFiles: [{ path: 'audio/Song Oct. 9.wav', type: 'wav' }],
+  audioFiles: [{ path: 'audio/BeetleGuts.mp3', type: 'mp3' }, { path: 'audio/Exploration.mp3', type: 'mp3' }, { path: 'audio/FairlyConstantSuspense.mp3', type: 'mp3' }, { path: 'audio/GatherersRemix.mp3', type: 'mp3' }, { path: 'audio/MarchOfTheAnts.mp3', type: 'mp3' }, { path: 'audio/QueenAntsGambit.mp3', type: 'mp3' }, { path: 'audio/SidewalkLife.mp3', type: 'mp3' }, { path: 'audio/SlowSodaCanSongP1.mp3', type: 'mp3' }, { path: 'audio/SlowSodaCanSongP2.mp3', type: 'mp3' }, { path: 'audio/SpanishAnts.mp3', type: 'mp3' }, { path: 'audio/TheQueenHerMajesty.mp3', type: 'mp3' }],
 
   dispersingPheromoneUpdateRate: 6,
   gravity: -100,
 
   foodSpawnInterval: 1000 * 15,
-  minFood: 50,
+  minFood: 75,
 
   explosiveScoreMultiple: 60
 
@@ -63,7 +63,7 @@ var pheromones = {
   },
   FOLLOW: {
     quantity: 100,
-    decayAmount: 100,
+    decayAmount: 50,
     isDispersing: true,
     decayRate: 0.1, // how much it decays per tick
     color: 'rgb(210, 105, 30)',

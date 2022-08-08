@@ -3,7 +3,7 @@
 const React = require('react');
 const Button = require('./Components/Button.react');
 // const Canvas = require('./Canvas.react');
-const {Canvas} = require('bens_ui_components');
+const {AudioWidget, Canvas} = require('bens_ui_components');
 const Checkbox = require('./Components/Checkbox.react');
 const RadioPicker = require('./Components/RadioPicker.react');
 const TopBar = require('./TopBar.react');
@@ -115,7 +115,17 @@ function Game(props: Props): React.Node {
         <div>Score: {game.score}</div>
       </h3>
       <Ticker ticker={game.ticker} />
-      <MiniTicker miniTicker={game.miniTicker} />
+      <AudioWidget
+        isShuffled={true}
+        audioFiles={config.audioFiles}
+        isMuted={false}
+        style={{
+          position: 'absolute',
+          top: 4,
+          left: 4,
+          display: 'none',
+        }}
+      />
     </div>
   );
 }
@@ -133,98 +143,25 @@ function Game(props: Props): React.Node {
 function registerHotkeys(dispatch) {
   dispatch({
     type: 'SET_HOTKEY', press: 'onKeyDown',
-    key: 'E',
+    key: 'space',
     fn: (s) => {
       const game = s.getState().game;
-      const controlledEntity = game.controlledEntity;
-      if (!controlledEntity) return;
-
-      const entityAction = getControlledEntityInteraction(game, controlledEntity);
-      if (
-        (entityAction.type == 'PICKUP' || entityAction.type == 'PUTDOWN') &&
-        (
-          isActionTypeQueued(controlledEntity, 'PICKUP') ||
-          isActionTypeQueued(controlledEntity, 'PUTDOWN'))
-      ) {
-        return;
-      }
-      dispatch({
-        type: 'ENQUEUE_ENTITY_ACTION',
-        entity: controlledEntity,
-        entityAction,
-      });
-    }
-  });
-
-  // manning:
-  dispatch({
-    type: 'SET_HOTKEY', press: 'onKeyDown',
-    key: 'M',
-    fn: (s) => {
-      const game = s.getState().game;
-      const controlledEntity = game.controlledEntity;
-      if (!controlledEntity) return;
-      const {entity, entityAction} = getManningAction(game);
-      if (entityAction) {
-        dispatch({
-          type: 'ENQUEUE_ENTITY_ACTION',
-          entity,
-          entityAction,
-        });
+      if (game.tickInterval) {
+        s.dispatch({type: 'STOP_TICK'});
+      } else {
+        s.dispatch({type: 'START_TICK'});
       }
     }
   });
-
   dispatch({
     type: 'SET_HOTKEY', press: 'onKeyDown',
-    key: 'up',
+    key: 'P',
     fn: (s) => {
       const game = s.getState().game;
-      if (game.focusedEntity) return;
-      let moveAmount = Math.round(Math.max(1, game.gridHeight / 10));
-      dispatch({
-        type: 'SET_VIEW_POS', viewPos: add(game.viewPos, {x: 0, y: moveAmount}),
+      s.dispatch({type: 'SET',
+        property: 'showPheromoneValues',
+        value: !game.showPheromoneValues,
       });
-      render(game);
-    }
-  });
-  dispatch({
-    type: 'SET_HOTKEY', press: 'onKeyDown',
-    key: 'down',
-    fn: (s) => {
-      const game = s.getState().game;
-      if (game.focusedEntity) return;
-      let moveAmount = Math.round(Math.max(1, game.gridHeight / 10));
-      dispatch({
-        type: 'SET_VIEW_POS', viewPos: add(game.viewPos, {x: 0, y: -1 * moveAmount}),
-      });
-      render(game);
-    }
-  });
-  dispatch({
-    type: 'SET_HOTKEY', press: 'onKeyDown',
-    key: 'left',
-    fn: (s) => {
-      const game = s.getState().game;
-      if (game.focusedEntity) return;
-      let moveAmount = Math.round(Math.max(1, game.gridWidth / 10));
-      dispatch({
-        type: 'SET_VIEW_POS', viewPos: add(game.viewPos, {x: -1 * moveAmount, y: 0}),
-      });
-      render(game);
-    }
-  });
-  dispatch({
-    type: 'SET_HOTKEY', press: 'onKeyDown',
-    key: 'right',
-    fn: (s) => {
-      const game = s.getState().game;
-      if (game.focusedEntity) return;
-      let moveAmount = Math.round(Math.max(1, game.gridWidth / 10));
-      dispatch({
-        type: 'SET_VIEW_POS', viewPos: add(game.viewPos, {x: moveAmount, y: 0}),
-      });
-      render(game);
     }
   });
 }
@@ -233,50 +170,52 @@ function configureMouseHandlers(game) {
   const handlers = {
     mouseMove: (state, dispatch, gridPos) => {
       const game = state.game;
-      if (game.mouse.isLeftDown) {
-        const prevPos = game.prevInteractPos;
-        // const prevPos = game.mouse.downPos;
-        if (prevPos) {
-          let quantity =
-            getPheromonesInCell(game.grid, prevPos, game.playerID).FOLLOW ||
-            pheromones.FOLLOW.quantity * 0.75;
-          let pos = prevPos;
-            dispatch({type: 'FILL_PHEROMONE',
-              gridPos: pos,
-              pheromoneType: 'FOLLOW',
-              playerID: state.game.playerID,
-              quantity,
-            });
-          while (!equals(pos, gridPos)) {
-            quantity += 1;
-            const diff = subtract(pos, gridPos);
-            pos = {
-              x: diff.x == 0 ? pos.x : pos.x - diff.x / Math.abs(diff.x),
-              y: diff.y == 0 ? pos.y : pos.y - diff.y / Math.abs(diff.y),
-            };
-            dispatch({type: 'FILL_PHEROMONE',
-              gridPos: pos,
-              pheromoneType: 'FOLLOW',
-              playerID: state.game.playerID,
-              quantity,
-            });
-          }
-          dispatch({type: 'SET',
-            property: 'prevInteractPos',
-            value: gridPos,
-          });
-        } else {
+      if (!game.mouse.isLeftDown) {
+        return;
+      }
+      // const prevPos = game.mouse.downPos;
+      if (game.prevInteractPos) {
+        const prevPos = game.prevInteractPos.pos;
+        let quantity = game.prevInteractPos.quantity;
+          // getPheromonesInCell(game.grid, prevPos, game.playerID).FOLLOW;
+          // || pheromones.FOLLOW.quantity * 0.75;
+        // console.log('quantity', quantity, prevPos, gridPos);
+        let pos = prevPos;
+        dispatch({type: 'FILL_PHEROMONE',
+          gridPos: pos,
+          pheromoneType: 'FOLLOW',
+          playerID: state.game.playerID,
+          quantity,
+        });
+        while (!equals(pos, gridPos)) {
+          quantity += 1;
+          const diff = subtract(pos, gridPos);
+          pos = {
+            x: diff.x == 0 ? pos.x : pos.x - diff.x / Math.abs(diff.x),
+            y: diff.y == 0 ? pos.y : pos.y - diff.y / Math.abs(diff.y),
+          };
           dispatch({type: 'FILL_PHEROMONE',
-            gridPos,
+            gridPos: pos,
             pheromoneType: 'FOLLOW',
             playerID: state.game.playerID,
-            quantity: pheromones.FOLLOW.quantity * 0.75,
-          });
-          dispatch({type: 'SET',
-            property: 'prevInteractPos',
-            value: gridPos,
+            quantity,
           });
         }
+        dispatch({type: 'SET',
+          property: 'prevInteractPos',
+          value: {pos: gridPos, quantity},
+        });
+      } else {
+        dispatch({type: 'FILL_PHEROMONE',
+          gridPos,
+          pheromoneType: 'FOLLOW',
+          playerID: state.game.playerID,
+          quantity: pheromones.FOLLOW.quantity * 0.75,
+        });
+        dispatch({type: 'SET',
+          property: 'prevInteractPos',
+          value: {pos: gridPos, quantity: pheromones.FOLLOW.quantity * 0.75},
+        });
       }
     },
     leftDown: (state, dispatch, gridPos) => {

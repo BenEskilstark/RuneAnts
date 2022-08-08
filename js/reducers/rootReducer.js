@@ -201,6 +201,7 @@ const rootReducer = (state: State, action: Action): State => {
     case 'SET':
     case 'SPAWN_FOOD':
     case 'SPAWN_SCORPION':
+    case 'SET_SCORE':
     case 'USE_EXPLOSIVE':
     case 'UPDATE_ALL_PHEROMONES':
     case 'SET_GAME_OVER':
