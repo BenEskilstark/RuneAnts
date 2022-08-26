@@ -19,7 +19,7 @@ const loadSprite = (dispatch, state, name, src): void => {
   // ) return;
   const img = new Image();
   img.addEventListener('load', () => {
-    console.log("loaded " + src + " spritesheet");
+    // console.log("loaded " + src + " spritesheet");
     dispatch({
       type: 'SET_SPRITE_SHEET',
       name,

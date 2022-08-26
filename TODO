@@ -1,24 +1,25 @@
 
+- rebuild for rune
+- submit to rune
+- allow rune and non-rune
+
+
+
 - - - - - - - FIX - - - - - - - -
   - food pheromone not always going away either
   - ants carrying food shouldn't be able to fight
 
 
 - - - - - POLISH - - - - -
-  - favicon
 
 
 - - - - - - PLAY TESTING - - - - - - -
 
 
 - - - - - - RUNE INTEGRATION - - - - -
-  - Rune script include
-  - Rune api calls
-  - make sure everything is below 25MB
   - Logo: 600x600 png
-  - game over
-    - call Rune.gameOver(), how to indicate win vs loss?
-  - test music in Rune CLI
+  - Support Rune + non-Rune builds
+
 
 
 - - - - OPTIONAL MECHANICS - - - - -

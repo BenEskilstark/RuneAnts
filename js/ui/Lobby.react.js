@@ -73,7 +73,24 @@ function Lobby(props: Props): React.Node {
       }
       if (isLoaded) {
         dispatch({type: 'SET_SCREEN', screen: 'GAME'});
-        dispatch({type: 'START_TICK'});
+
+        if (!store.getState().runeInited) {
+          Rune.init({
+            resumeGame: () => dispatch({type: 'START_TICK'}),
+            pauseGame: () => dispatch({type: 'STOP_TICK'}),
+            restartGame: () => {
+              dispatch({type: 'STOP_TICK'});
+              dispatch({type: 'RETURN_TO_LOBBY'});
+            },
+            getScore: () => {
+              const game = store.getState().game;
+              if (game) return game.score;
+              return 0;
+            }
+          });
+        } else {
+          dispatch({type: 'START_TICK'});
+        }
       }
     }
   }, [loading, isLoaded, loadingProgress]);

@@ -149,6 +149,7 @@ const rootReducer = (state: State, action: Action): State => {
         ...state,
         screen: 'LOBBY',
         game: null,
+        runeInited: true,
         editor: {},
         campaign: {},
       };

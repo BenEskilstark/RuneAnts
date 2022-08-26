@@ -2307,6 +2307,7 @@ var rootReducer = function rootReducer(state, action) {
       return _extends({}, state, {
         screen: 'LOBBY',
         game: null,
+        runeInited: true,
         editor: {},
         campaign: {}
       });
@@ -8296,7 +8297,7 @@ var initFoodSpawnSystem = function initFoodSpawnSystem(store) {
   var dispatch = store.dispatch;
 
   var time = -1;
-  store.subscribe(function () {
+  return store.subscribe(function () {
     var state = store.getState();
     var game = state.game;
 
@@ -8366,7 +8367,7 @@ var initGameOverSystem = function initGameOverSystem(store) {
   var dispatch = store.dispatch;
 
   var time = -1;
-  store.subscribe(function () {
+  return store.subscribe(function () {
     var state = store.getState();
     var game = state.game;
 
@@ -8397,40 +8398,41 @@ var handleGameLoss = function handleGameLoss(store, dispatch, state, reason) {
   var game = state.game;
 
   dispatch({ type: 'STOP_TICK' });
+  Rune.gameOver();
 
-  var returnButton = {
-    label: 'Restart',
-    onClick: function onClick() {
-      dispatch({ type: 'DISMISS_MODAL' });
-      dispatch({ type: 'RETURN_TO_LOBBY' });
-    }
-  };
-  var resetButton = {
-    label: 'Reset',
-    onClick: function onClick() {
-      dispatch({ type: 'DISMISS_MODAL' });
-      dispatch({ type: 'SET_PLAYERS_AND_SIZE' });
-      render(store.getState().game); // HACK for level editor
-    }
-  };
-  var buttons = [returnButton];
-  if (state.screen == 'EDITOR') {
-    buttons.push(resetButton);
-  }
+  // const returnButton = {
+  //   label: 'Restart',
+  //   onClick: () => {
+  //     dispatch({type: 'DISMISS_MODAL'});
+  //     dispatch({type: 'RETURN_TO_LOBBY'});
+  //   }
+  // };
+  // const resetButton = {
+  //   label: 'Reset',
+  //   onClick: () => {
+  //     dispatch({type: 'DISMISS_MODAL'});
+  //     dispatch({type: 'SET_PLAYERS_AND_SIZE'});
+  //     render(store.getState().game); // HACK for level editor
+  //   },
+  // };
+  // const buttons = [returnButton];
+  // if (state.screen == 'EDITOR') {
+  //   buttons.push(resetButton);
+  // }
 
-  var body = React.createElement(
-    'div',
-    null,
-    'Your colony was destroyed!'
-  );
+  // const body = (
+  //   <div>
+  //   {`Your colony was destroyed!`}
+  //   </div>
+  // );
 
-  dispatch({ type: 'SET_MODAL',
-    modal: React.createElement(Modal, {
-      title: 'Game Over',
-      body: body,
-      buttons: buttons
-    })
-  });
+  // dispatch({type: 'SET_MODAL',
+  //   modal: (<Modal
+  //     title={'Game Over'}
+  //     body={body}
+  //     buttons={buttons}
+  //   />),
+  // });
 };
 
 var handleGameWon = function handleGameWon(store, dispatch, state, reason) {
@@ -8440,36 +8442,39 @@ var handleGameWon = function handleGameWon(store, dispatch, state, reason) {
   // give a bonus to score based on how fast you won
   // where winning faster gives an exponentially bigger bonus
   dispatch({ type: 'SET_SCORE',
-    score: Math.min(Math.ceil(game.score * (1 + 100000000 ** (1000 / game.time))), 1000000000)
+    score: Math.min(Math.ceil(game.score * (1 + 100000000 ** (1000 / game.time))),
+    // 1000000000,
+    999999999)
   });
+  Rune.gameOver();
 
-  var returnButton = {
-    label: 'Restart',
-    onClick: function onClick() {
-      dispatch({ type: 'DISMISS_MODAL' });
-      dispatch({ type: 'RETURN_TO_LOBBY' });
-    }
-  };
-  var resetButton = {
-    label: 'Reset',
-    onClick: function onClick() {
-      dispatch({ type: 'DISMISS_MODAL' });
-      dispatch({ type: 'SET_PLAYERS_AND_SIZE' });
-      render(store.getState().game); // HACK for level editor
-    }
-  };
-  var buttons = [returnButton];
-  if (state.screen == 'EDITOR') {
-    buttons.push(resetButton);
-  }
+  // const returnButton = {
+  //   label: 'Restart',
+  //   onClick: () => {
+  //     dispatch({type: 'DISMISS_MODAL'});
+  //     dispatch({type: 'RETURN_TO_LOBBY'});
+  //   }
+  // };
+  // const resetButton = {
+  //   label: 'Reset',
+  //   onClick: () => {
+  //     dispatch({type: 'DISMISS_MODAL'});
+  //     dispatch({type: 'SET_PLAYERS_AND_SIZE'});
+  //     render(store.getState().game); // HACK for level editor
+  //   },
+  // };
+  // const buttons = [returnButton];
+  // if (state.screen == 'EDITOR') {
+  //   buttons.push(resetButton);
+  // }
 
-  dispatch({ type: 'SET_MODAL',
-    modal: React.createElement(Modal, {
-      title: 'Level Won',
-      body: 'You destroyed the enemy colony and scored: ' + game.score,
-      buttons: buttons
-    })
-  });
+  // dispatch({type: 'SET_MODAL',
+  //   modal: (<Modal
+  //     title={'Level Won'}
+  //     body={`You destroyed the enemy colony and scored: ${game.score}`}
+  //     buttons={buttons}
+  //   />),
+  // });
 };
 
 module.exports = { initGameOverSystem: initGameOverSystem };
@@ -9155,7 +9160,7 @@ var loadSprite = function loadSprite(dispatch, state, name, src) {
   // ) return;
   var img = new Image();
   img.addEventListener('load', function () {
-    console.log("loaded " + src + " spritesheet");
+    // console.log("loaded " + src + " spritesheet");
     dispatch({
       type: 'SET_SPRITE_SHEET',
       name: name,
@@ -10282,11 +10287,15 @@ function Game(props) {
   useEffect(function () {
     initKeyboardControlsSystem(store);
     // initSpriteSheetSystem(store);
-    initGameOverSystem(store);
-    initFoodSpawnSystem(store);
+    var unGameOver = initGameOverSystem(store);
+    var unFoodSpawn = initFoodSpawnSystem(store);
     initPheromoneWorkerSystem(store);
     registerHotkeys(dispatch);
     initMouseControlsSystem(store, configureMouseHandlers(state.game));
+    return function () {
+      unGameOver();
+      unFoodSpawn();
+    };
   }, [gameID]);
 
   // ---------------------------------------------
@@ -10402,6 +10411,7 @@ function configureMouseHandlers(game) {
       if (!game.mouse.isLeftDown) {
         return;
       }
+      dispatch({ type: 'SET', value: true, property: 'inMove' });
       // const prevPos = game.mouse.downPos;
       if (game.prevInteractPos) {
         var prevPos = game.prevInteractPos.pos;
@@ -10447,13 +10457,14 @@ function configureMouseHandlers(game) {
         });
       }
     },
-    leftDown: function leftDown(state, dispatch, gridPos) {
+    // leftDown: (state, dispatch, gridPos) => {
+    // },
+    leftUp: function leftUp(state, dispatch, gridPos) {
       var game = state.game;
-      if (game.explosiveReady) {
+      if (!game.inMove && game.explosiveReady) {
         dispatch({ type: 'USE_EXPLOSIVE', score: game.collected, gridPos: gridPos });
       }
-    },
-    leftUp: function leftUp(state, dispatch, gridPos) {
+      dispatch({ type: 'SET', value: false, property: 'inMove' });
       dispatch({ type: 'SET',
         property: 'prevInteractPos',
         value: null
@@ -11970,7 +11981,28 @@ function Lobby(props) {
       }
       if (isLoaded) {
         dispatch({ type: 'SET_SCREEN', screen: 'GAME' });
-        dispatch({ type: 'START_TICK' });
+
+        if (!store.getState().runeInited) {
+          Rune.init({
+            resumeGame: function resumeGame() {
+              return dispatch({ type: 'START_TICK' });
+            },
+            pauseGame: function pauseGame() {
+              return dispatch({ type: 'STOP_TICK' });
+            },
+            restartGame: function restartGame() {
+              dispatch({ type: 'STOP_TICK' });
+              dispatch({ type: 'RETURN_TO_LOBBY' });
+            },
+            getScore: function getScore() {
+              var game = store.getState().game;
+              if (game) return game.score;
+              return 0;
+            }
+          });
+        } else {
+          dispatch({ type: 'START_TICK' });
+        }
       }
     }
   }, [loading, isLoaded, loadingProgress]);

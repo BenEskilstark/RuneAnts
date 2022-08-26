@@ -62,11 +62,15 @@ function Game(props: Props): React.Node {
   useEffect(() => {
     initKeyboardControlsSystem(store);
     // initSpriteSheetSystem(store);
-    initGameOverSystem(store);
-    initFoodSpawnSystem(store);
+    const unGameOver = initGameOverSystem(store);
+    const unFoodSpawn = initFoodSpawnSystem(store);
     initPheromoneWorkerSystem(store);
     registerHotkeys(dispatch);
     initMouseControlsSystem(store, configureMouseHandlers(state.game));
+    return () => {
+      unGameOver();
+      unFoodSpawn();
+    }
   }, [gameID]);
 
   // ---------------------------------------------
@@ -173,6 +177,7 @@ function configureMouseHandlers(game) {
       if (!game.mouse.isLeftDown) {
         return;
       }
+      dispatch({type: 'SET', value: true, property: 'inMove'});
       // const prevPos = game.mouse.downPos;
       if (game.prevInteractPos) {
         const prevPos = game.prevInteractPos.pos;
@@ -218,13 +223,14 @@ function configureMouseHandlers(game) {
         });
       }
     },
-    leftDown: (state, dispatch, gridPos) => {
+    // leftDown: (state, dispatch, gridPos) => {
+    // },
+    leftUp: (state, dispatch, gridPos) => {
       const game = state.game;
-      if (game.explosiveReady) {
+      if (!game.inMove && game.explosiveReady) {
         dispatch({type: 'USE_EXPLOSIVE', score: game.collected, gridPos});
       }
-    },
-    leftUp: (state, dispatch, gridPos) => {
+      dispatch({type: 'SET', value: false, property: 'inMove'});
       dispatch({type: 'SET',
         property: 'prevInteractPos',
         value: null,
