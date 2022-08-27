@@ -8,6 +8,7 @@ const {lookupInGrid} = require('../utils/gridHelpers');
 const {add} = require('../utils/vectors');
 const {render} = require('../render/render');
 const {getDisplayTime} = require('../utils/helpers');
+const {useRune} = require('../selectors/misc');
 const {useState} = React;
 
 /**
@@ -49,41 +50,45 @@ const initGameOverSystem = (store) => {
 const handleGameLoss = (store, dispatch, state, reason): void => {
   const {game} = state;
   dispatch({type: 'STOP_TICK'});
-  Rune.gameOver();
+  const Rune = useRune();
+  if (Rune) {
+    Rune.gameOver();
+    return;
+  }
 
-  // const returnButton = {
-  //   label: 'Restart',
-  //   onClick: () => {
-  //     dispatch({type: 'DISMISS_MODAL'});
-  //     dispatch({type: 'RETURN_TO_LOBBY'});
-  //   }
-  // };
-  // const resetButton = {
-  //   label: 'Reset',
-  //   onClick: () => {
-  //     dispatch({type: 'DISMISS_MODAL'});
-  //     dispatch({type: 'SET_PLAYERS_AND_SIZE'});
-  //     render(store.getState().game); // HACK for level editor
-  //   },
-  // };
-  // const buttons = [returnButton];
-  // if (state.screen == 'EDITOR') {
-  //   buttons.push(resetButton);
-  // }
+  const returnButton = {
+    label: 'Restart',
+    onClick: () => {
+      dispatch({type: 'DISMISS_MODAL'});
+      dispatch({type: 'RETURN_TO_LOBBY'});
+    }
+  };
+  const resetButton = {
+    label: 'Reset',
+    onClick: () => {
+      dispatch({type: 'DISMISS_MODAL'});
+      dispatch({type: 'SET_PLAYERS_AND_SIZE'});
+      render(store.getState().game); // HACK for level editor
+    },
+  };
+  const buttons = [returnButton];
+  if (state.screen == 'EDITOR') {
+    buttons.push(resetButton);
+  }
 
-  // const body = (
-  //   <div>
-  //   {`Your colony was destroyed!`}
-  //   </div>
-  // );
+  const body = (
+    <div>
+    {`Your colony was destroyed!`}
+    </div>
+  );
 
-  // dispatch({type: 'SET_MODAL',
-  //   modal: (<Modal
-  //     title={'Game Over'}
-  //     body={body}
-  //     buttons={buttons}
-  //   />),
-  // });
+  dispatch({type: 'SET_MODAL',
+    modal: (<Modal
+      title={'Game Over'}
+      body={body}
+      buttons={buttons}
+    />),
+  });
 };
 
 const handleGameWon = (store, dispatch, state, reason): void => {
@@ -98,35 +103,39 @@ const handleGameWon = (store, dispatch, state, reason): void => {
       999999999,
     ),
   });
-  Rune.gameOver();
+  const Rune = useRune();
+  if (Rune) {
+    Rune.gameOver();
+    return;
+  }
 
-  // const returnButton = {
-  //   label: 'Restart',
-  //   onClick: () => {
-  //     dispatch({type: 'DISMISS_MODAL'});
-  //     dispatch({type: 'RETURN_TO_LOBBY'});
-  //   }
-  // };
-  // const resetButton = {
-  //   label: 'Reset',
-  //   onClick: () => {
-  //     dispatch({type: 'DISMISS_MODAL'});
-  //     dispatch({type: 'SET_PLAYERS_AND_SIZE'});
-  //     render(store.getState().game); // HACK for level editor
-  //   },
-  // };
-  // const buttons = [returnButton];
-  // if (state.screen == 'EDITOR') {
-  //   buttons.push(resetButton);
-  // }
+  const returnButton = {
+    label: 'Restart',
+    onClick: () => {
+      dispatch({type: 'DISMISS_MODAL'});
+      dispatch({type: 'RETURN_TO_LOBBY'});
+    }
+  };
+  const resetButton = {
+    label: 'Reset',
+    onClick: () => {
+      dispatch({type: 'DISMISS_MODAL'});
+      dispatch({type: 'SET_PLAYERS_AND_SIZE'});
+      render(store.getState().game); // HACK for level editor
+    },
+  };
+  const buttons = [returnButton];
+  if (state.screen == 'EDITOR') {
+    buttons.push(resetButton);
+  }
 
-  // dispatch({type: 'SET_MODAL',
-  //   modal: (<Modal
-  //     title={'Level Won'}
-  //     body={`You destroyed the enemy colony and scored: ${game.score}`}
-  //     buttons={buttons}
-  //   />),
-  // });
+  dispatch({type: 'SET_MODAL',
+    modal: (<Modal
+      title={'Level Won'}
+      body={`You destroyed the enemy colony and scored: ${game.score}`}
+      buttons={buttons}
+    />),
+  });
 };
 
 module.exports = {initGameOverSystem};

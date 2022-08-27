@@ -1,6 +1,7 @@
 // @flow
 
 const config = {
+  useRune: false,
   msPerTick: 16,
 
   canvasWidth: 1000,

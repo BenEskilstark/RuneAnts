@@ -4,7 +4,6 @@
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 var config = {
-  useRune: false,
   msPerTick: 16,
 
   canvasWidth: 1000,
@@ -34,7 +33,7 @@ var config = {
   foodSpawnInterval: 1000 * 15,
   minFood: 75,
 
-  explosiveScoreMultiple: 60
+  explosiveScoreMultiple: 60,
 
 };
 
@@ -4306,11 +4305,8 @@ var _require5 = require('../utils/vectors'),
     ceil = _require5.ceil,
     containsVector = _require5.containsVector;
 
-var _require6 = require('../config'),
-    config = _require6.config;
-
-var _require7 = require('../simulation/actionQueue'),
-    makeAction = _require7.makeAction;
+var _require6 = require('../simulation/actionQueue'),
+    makeAction = _require6.makeAction;
 
 var onScreen = function onScreen(game, entity) {
   var viewPos = game.viewPos,
@@ -4520,13 +4516,6 @@ var getManningAction = function getManningAction(game) {
   return { entity: entity, entityAction: entityAction };
 };
 
-var useRune = function useRune() {
-  if (typeof Rune == 'undefined' || !config.useRune) {
-    return false;
-  }
-  return Rune;
-};
-
 module.exports = {
   onScreen: onScreen,
   getPositionsInFront: getPositionsInFront,
@@ -4534,10 +4523,9 @@ module.exports = {
   isFacing: isFacing,
   canDoMove: canDoMove,
   getControlledEntityInteraction: getControlledEntityInteraction,
-  getManningAction: getManningAction,
-  useRune: useRune
+  getManningAction: getManningAction
 };
-},{"../config":1,"../selectors/collisions":37,"../selectors/neighbors":40,"../simulation/actionQueue":44,"../utils/gridHelpers":91,"../utils/helpers":92,"../utils/vectors":95}],39:[function(require,module,exports){
+},{"../selectors/collisions":37,"../selectors/neighbors":40,"../simulation/actionQueue":44,"../utils/gridHelpers":91,"../utils/helpers":92,"../utils/vectors":95}],39:[function(require,module,exports){
 'use strict';
 
 var _require = require('../utils/vectors'),
@@ -8365,9 +8353,6 @@ var _require3 = require('../render/render'),
 var _require4 = require('../utils/helpers'),
     getDisplayTime = _require4.getDisplayTime;
 
-var _require5 = require('../selectors/misc'),
-    useRune = _require5.useRune;
-
 var useState = React.useState;
 
 /**
@@ -8413,45 +8398,41 @@ var handleGameLoss = function handleGameLoss(store, dispatch, state, reason) {
   var game = state.game;
 
   dispatch({ type: 'STOP_TICK' });
-  var Rune = useRune();
-  if (Rune) {
-    Rune.gameOver();
-    return;
-  }
+  Rune.gameOver();
 
-  var returnButton = {
-    label: 'Restart',
-    onClick: function onClick() {
-      dispatch({ type: 'DISMISS_MODAL' });
-      dispatch({ type: 'RETURN_TO_LOBBY' });
-    }
-  };
-  var resetButton = {
-    label: 'Reset',
-    onClick: function onClick() {
-      dispatch({ type: 'DISMISS_MODAL' });
-      dispatch({ type: 'SET_PLAYERS_AND_SIZE' });
-      render(store.getState().game); // HACK for level editor
-    }
-  };
-  var buttons = [returnButton];
-  if (state.screen == 'EDITOR') {
-    buttons.push(resetButton);
-  }
+  // const returnButton = {
+  //   label: 'Restart',
+  //   onClick: () => {
+  //     dispatch({type: 'DISMISS_MODAL'});
+  //     dispatch({type: 'RETURN_TO_LOBBY'});
+  //   }
+  // };
+  // const resetButton = {
+  //   label: 'Reset',
+  //   onClick: () => {
+  //     dispatch({type: 'DISMISS_MODAL'});
+  //     dispatch({type: 'SET_PLAYERS_AND_SIZE'});
+  //     render(store.getState().game); // HACK for level editor
+  //   },
+  // };
+  // const buttons = [returnButton];
+  // if (state.screen == 'EDITOR') {
+  //   buttons.push(resetButton);
+  // }
 
-  var body = React.createElement(
-    'div',
-    null,
-    'Your colony was destroyed!'
-  );
+  // const body = (
+  //   <div>
+  //   {`Your colony was destroyed!`}
+  //   </div>
+  // );
 
-  dispatch({ type: 'SET_MODAL',
-    modal: React.createElement(Modal, {
-      title: 'Game Over',
-      body: body,
-      buttons: buttons
-    })
-  });
+  // dispatch({type: 'SET_MODAL',
+  //   modal: (<Modal
+  //     title={'Game Over'}
+  //     body={body}
+  //     buttons={buttons}
+  //   />),
+  // });
 };
 
 var handleGameWon = function handleGameWon(store, dispatch, state, reason) {
@@ -8465,43 +8446,39 @@ var handleGameWon = function handleGameWon(store, dispatch, state, reason) {
     // 1000000000,
     999999999)
   });
-  var Rune = useRune();
-  if (Rune) {
-    Rune.gameOver();
-    return;
-  }
+  Rune.gameOver();
 
-  var returnButton = {
-    label: 'Restart',
-    onClick: function onClick() {
-      dispatch({ type: 'DISMISS_MODAL' });
-      dispatch({ type: 'RETURN_TO_LOBBY' });
-    }
-  };
-  var resetButton = {
-    label: 'Reset',
-    onClick: function onClick() {
-      dispatch({ type: 'DISMISS_MODAL' });
-      dispatch({ type: 'SET_PLAYERS_AND_SIZE' });
-      render(store.getState().game); // HACK for level editor
-    }
-  };
-  var buttons = [returnButton];
-  if (state.screen == 'EDITOR') {
-    buttons.push(resetButton);
-  }
+  // const returnButton = {
+  //   label: 'Restart',
+  //   onClick: () => {
+  //     dispatch({type: 'DISMISS_MODAL'});
+  //     dispatch({type: 'RETURN_TO_LOBBY'});
+  //   }
+  // };
+  // const resetButton = {
+  //   label: 'Reset',
+  //   onClick: () => {
+  //     dispatch({type: 'DISMISS_MODAL'});
+  //     dispatch({type: 'SET_PLAYERS_AND_SIZE'});
+  //     render(store.getState().game); // HACK for level editor
+  //   },
+  // };
+  // const buttons = [returnButton];
+  // if (state.screen == 'EDITOR') {
+  //   buttons.push(resetButton);
+  // }
 
-  dispatch({ type: 'SET_MODAL',
-    modal: React.createElement(Modal, {
-      title: 'Level Won',
-      body: 'You destroyed the enemy colony and scored: ' + game.score,
-      buttons: buttons
-    })
-  });
+  // dispatch({type: 'SET_MODAL',
+  //   modal: (<Modal
+  //     title={'Level Won'}
+  //     body={`You destroyed the enemy colony and scored: ${game.score}`}
+  //     buttons={buttons}
+  //   />),
+  // });
 };
 
 module.exports = { initGameOverSystem: initGameOverSystem };
-},{"../render/render":32,"../selectors/misc":38,"../ui/components/Button.react":82,"../ui/components/Divider.react":84,"../ui/components/Modal.react":87,"../utils/gridHelpers":91,"../utils/helpers":92,"../utils/vectors":95,"react":156}],54:[function(require,module,exports){
+},{"../render/render":32,"../ui/components/Button.react":82,"../ui/components/Divider.react":84,"../ui/components/Modal.react":87,"../utils/gridHelpers":91,"../utils/helpers":92,"../utils/vectors":95,"react":156}],54:[function(require,module,exports){
 'use strict';
 
 var initKeyboardControlsSystem = function initKeyboardControlsSystem(store) {
@@ -11917,9 +11894,6 @@ var _require2 = require('../systems/spriteSheetSystem'),
 var _require3 = require('../utils/helpers'),
     isMobile = _require3.isMobile;
 
-var _require4 = require('../selectors/misc'),
-    useRune = _require4.useRune;
-
 var globalConfig = require('../config');
 var useState = React.useState,
     useEffect = React.useEffect,
@@ -12008,8 +11982,7 @@ function Lobby(props) {
       if (isLoaded) {
         dispatch({ type: 'SET_SCREEN', screen: 'GAME' });
 
-        var Rune = useRune();
-        if (Rune && !store.getState().runeInited) {
+        if (!store.getState().runeInited) {
           Rune.init({
             resumeGame: function resumeGame() {
               return dispatch({ type: 'START_TICK' });
@@ -12200,7 +12173,7 @@ function playLevel(store, levelName, setLoadingProgress, setIsLoaded) {
 }
 
 module.exports = Lobby;
-},{"../config":1,"../levels/levels":18,"../selectors/misc":38,"../systems/spriteSheetSystem":59,"../thunks/levelThunks":60,"../ui/components/Modal.react":87,"../ui/components/QuitButton.react":89,"../utils/helpers":92,"./components/AudioWidget.react":81,"./components/Button.react":82,"./components/Checkbox.react":83,"./components/Divider.react":84,"./components/Dropdown.react":85,"axios":98,"react":156}],78:[function(require,module,exports){
+},{"../config":1,"../levels/levels":18,"../systems/spriteSheetSystem":59,"../thunks/levelThunks":60,"../ui/components/Modal.react":87,"../ui/components/QuitButton.react":89,"../utils/helpers":92,"./components/AudioWidget.react":81,"./components/Button.react":82,"./components/Checkbox.react":83,"./components/Divider.react":84,"./components/Dropdown.react":85,"axios":98,"react":156}],78:[function(require,module,exports){
 'use strict';
 
 var React = require('react');
@@ -43385,7 +43358,7 @@ function injectIntoDevTools(devToolsConfig) {
     scheduleRoot:  scheduleRoot ,
     setRefreshHandler:  setRefreshHandler ,
     // Enables DevTools to append owner stacks to error messages in DEV mode.
-    getCurrentFiber:  getCurrentFiberForDevTools 
+    getCurrentFiber:  getCurrentFiberForDevTools
   });
 }
 

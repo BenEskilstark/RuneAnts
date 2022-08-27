@@ -13,6 +13,7 @@ const levels = require('../levels/levels');
 const {loadLevel} = require('../thunks/levelThunks');
 const {initSpriteSheetSystem} = require('../systems/spriteSheetSystem');
 const {isMobile} = require('../utils/helpers');
+const {useRune} = require('../selectors/misc');
 const globalConfig = require('../config');
 const {useState, useEffect, useMemo} = React;
 
@@ -74,7 +75,8 @@ function Lobby(props: Props): React.Node {
       if (isLoaded) {
         dispatch({type: 'SET_SCREEN', screen: 'GAME'});
 
-        if (!store.getState().runeInited) {
+        const Rune = useRune();
+        if (Rune && !store.getState().runeInited) {
           Rune.init({
             resumeGame: () => dispatch({type: 'START_TICK'}),
             pauseGame: () => dispatch({type: 'STOP_TICK'}),

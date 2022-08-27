@@ -1,10 +1,4 @@
 
-- rebuild for rune
-- submit to rune
-- allow rune and non-rune
-
-
-
 - - - - - - - FIX - - - - - - - -
   - food pheromone not always going away either
   - ants carrying food shouldn't be able to fight
@@ -18,7 +12,6 @@
 
 - - - - - - RUNE INTEGRATION - - - - -
   - Logo: 600x600 png
-  - Support Rune + non-Rune builds
 
 
 

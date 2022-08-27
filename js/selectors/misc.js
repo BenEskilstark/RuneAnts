@@ -10,6 +10,7 @@ const {
   add, makeVector, subtract, vectorTheta, round, ceil,
   containsVector,
 } = require('../utils/vectors');
+const {config} = require('../config');
 const {makeAction} = require('../simulation/actionQueue');
 
 import type {Game, PlayerID, Hill, Vector} from '../types';
@@ -187,6 +188,13 @@ const getManningAction = (game: Game): EntityAction => {
   return {entity, entityAction};
 };
 
+const useRune = () => {
+  if (typeof Rune == 'undefined' || !config.useRune) {
+    return false;
+  }
+  return Rune;
+}
+
 module.exports = {
   onScreen,
   getPositionsInFront,
@@ -195,4 +203,5 @@ module.exports = {
   canDoMove,
   getControlledEntityInteraction,
   getManningAction,
+  useRune,
 };
