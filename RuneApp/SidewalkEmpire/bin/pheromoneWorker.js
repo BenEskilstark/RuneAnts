@@ -4,6 +4,7 @@
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 var config = {
+  useRune: true,
   msPerTick: 16,
 
   canvasWidth: 1000,
@@ -15,7 +16,7 @@ var config = {
   cellWidth: 20,
   cellHeight: 16,
 
-  audioFiles: [{ path: 'audio/BeetleGuts.mp3', type: 'mp3' }, { path: 'audio/FairlyConstantSuspense.mp3', type: 'mp3' }, { path: 'audio/GatherersRemix.mp3', type: 'mp3' }, { path: 'audio/MarchOfTheAnts.mp3', type: 'mp3' }, { path: 'audio/SidewalkLife.mp3', type: 'mp3' }, { path: 'audio/SlowSodaCanSongP1.mp3', type: 'mp3' }, { path: 'audio/SpanishAnts.mp3', type: 'mp3' }, { path: 'audio/TheQueenHerMajesty.mp3', type: 'mp3' }],
+  audioFiles: [{ path: 'audio/BeetleGuts.mp3', type: 'mp3' }, { path: 'audio/Exploration.mp3', type: 'mp3' }, { path: 'audio/MarchOfTheAnts.mp3', type: 'mp3' }, { path: 'audio/TheQueenHerMajesty.mp3', type: 'mp3' }],
 
   imageFiles: {
     FOOD: './img/FOOD.png',
@@ -33,7 +34,7 @@ var config = {
   foodSpawnInterval: 1000 * 15,
   minFood: 75,
 
-  explosiveScoreMultiple: 1
+  explosiveScoreMultiple: 60
 
 };
 
@@ -2566,8 +2567,11 @@ var _require5 = require('../utils/vectors'),
     ceil = _require5.ceil,
     containsVector = _require5.containsVector;
 
-var _require6 = require('../simulation/actionQueue'),
-    makeAction = _require6.makeAction;
+var _require6 = require('../config'),
+    config = _require6.config;
+
+var _require7 = require('../simulation/actionQueue'),
+    makeAction = _require7.makeAction;
 
 var onScreen = function onScreen(game, entity) {
   var viewPos = game.viewPos,
@@ -2777,6 +2781,13 @@ var getManningAction = function getManningAction(game) {
   return { entity: entity, entityAction: entityAction };
 };
 
+var useRune = function useRune() {
+  if (typeof Rune == 'undefined' || !config.useRune) {
+    return false;
+  }
+  return Rune;
+};
+
 module.exports = {
   onScreen: onScreen,
   getPositionsInFront: getPositionsInFront,
@@ -2784,9 +2795,10 @@ module.exports = {
   isFacing: isFacing,
   canDoMove: canDoMove,
   getControlledEntityInteraction: getControlledEntityInteraction,
-  getManningAction: getManningAction
+  getManningAction: getManningAction,
+  useRune: useRune
 };
-},{"../selectors/collisions":22,"../selectors/neighbors":24,"../simulation/actionQueue":27,"../utils/gridHelpers":30,"../utils/helpers":31,"../utils/vectors":33}],24:[function(require,module,exports){
+},{"../config":1,"../selectors/collisions":22,"../selectors/neighbors":24,"../simulation/actionQueue":27,"../utils/gridHelpers":30,"../utils/helpers":31,"../utils/vectors":33}],24:[function(require,module,exports){
 'use strict';
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }

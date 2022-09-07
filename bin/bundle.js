@@ -16,7 +16,7 @@ var config = {
   cellWidth: 20,
   cellHeight: 16,
 
-  audioFiles: [{ path: 'audio/BeetleGuts.mp3', type: 'mp3' }, { path: 'audio/FairlyConstantSuspense.mp3', type: 'mp3' }, { path: 'audio/GatherersRemix.mp3', type: 'mp3' }, { path: 'audio/MarchOfTheAnts.mp3', type: 'mp3' }, { path: 'audio/SidewalkLife.mp3', type: 'mp3' }, { path: 'audio/SlowSodaCanSongP1.mp3', type: 'mp3' }, { path: 'audio/SpanishAnts.mp3', type: 'mp3' }, { path: 'audio/TheQueenHerMajesty.mp3', type: 'mp3' }],
+  audioFiles: [{ path: 'audio/BeetleGuts.mp3', type: 'mp3' }, { path: 'audio/Exploration.mp3', type: 'mp3' }, { path: 'audio/MarchOfTheAnts.mp3', type: 'mp3' }, { path: 'audio/TheQueenHerMajesty.mp3', type: 'mp3' }],
 
   imageFiles: {
     FOOD: './img/FOOD.png',
@@ -2592,6 +2592,8 @@ module.exports = { rootReducer: rootReducer };
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 var _require = require('../simulation/pheromones'),
     fadeAllPheromones = _require.fadeAllPheromones,
     computeAllPheromoneSteadyState = _require.computeAllPheromoneSteadyState,
@@ -2740,12 +2742,21 @@ var doTick = function doTick(game) {
     });
 
     game.ticker = {
+      message: '^^ You are the blue ants',
+      time: 2000,
+      max: 2000
+    };
+
+    game.score = 10;
+  }
+
+  if (game.totalGameTime > 4000 && !game.dragTicker) {
+    game.dragTicker = true;
+    game.ticker = {
       message: 'Drag to create pheromone trails',
       time: 3000,
       max: 3000
     };
-
-    game.score = 10;
   }
 
   // game/frame timing
@@ -2855,12 +2866,13 @@ var updateAgents = function updateAgents(game) {
 var updateExplosives = function updateExplosives(game) {
   if (game.collected > 0 && // game.explosiveReady = false &&
   game.collected % globalConfig.config.explosiveScoreMultiple == 0 && !game.explosiveUses[game.collected]) {
+    var _game$ticker;
+
     game.explosiveReady = true;
-    game.ticker = {
-      message: 'Explosive Ready!',
-      time: 10000,
-      max: 10000
-    };
+    game.ticker = (_game$ticker = {
+      // message: 'Explosive Ready!',
+      message: 'U+1F4A3 Ready!'
+    }, _defineProperty(_game$ticker, 'message', '💣 Ready!'), _defineProperty(_game$ticker, 'time', 10000), _defineProperty(_game$ticker, 'max', 10000), _game$ticker);
   }
 
   for (var id in game.EXPLOSIVE) {

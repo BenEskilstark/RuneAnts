@@ -103,12 +103,21 @@ const doTick = (game: Game): Game => {
     });
 
     game.ticker = {
+      message: '^^ You are the blue ants',
+      time: 2000,
+      max: 2000,
+    };
+
+    game.score = 10;
+  }
+
+  if (game.totalGameTime > 4000 && !game.dragTicker) {
+    game.dragTicker = true;
+    game.ticker = {
       message: 'Drag to create pheromone trails',
       time: 3000,
       max: 3000,
     };
-
-    game.score = 10;
   }
 
   // game/frame timing
@@ -207,7 +216,9 @@ const updateExplosives = (game): void => {
   ) {
     game.explosiveReady = true;
     game.ticker = {
-      message: 'Explosive Ready!',
+      // message: 'Explosive Ready!',
+      message: 'U+1F4A3 Ready!',
+      message: '💣 Ready!',
       time: 10000,
       max: 10000,
     };

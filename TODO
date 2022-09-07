@@ -8,13 +8,16 @@
 
 
 - - - - - - PLAY TESTING - - - - - - -
-  - Point out which color you are
-  - Replace "explosion" with bomb emoji
-  - Loop the music (and add a bit more?)
 
 
-- - - - - - RUNE INTEGRATION - - - - -
-  - Logo: 600x600 png
+- - - - - - RUNE DEPLOY - - - - -
+  - make changes
+  - test with rune: false
+  - set rune: true
+  - add more music, make it loop
+  - test in rune emulator
+  - package zip
+  - deploy with the update script
 
 
 
