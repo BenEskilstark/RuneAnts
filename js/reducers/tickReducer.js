@@ -111,7 +111,7 @@ const doTick = (game: Game): Game => {
     game.score = 10;
   }
 
-  if (game.totalGameTime > 1000 && !game.dragTicker) {
+  if (game.totalGameTime > 4000 && !game.dragTicker) {
     game.dragTicker = true;
     game.ticker = {
       message: 'Drag to create pheromone trails',
@@ -130,8 +130,8 @@ const doTick = (game: Game): Game => {
   if (game.totalGameTime > 20000 && !game.goalTicker) {
     game.goalTicker = true;
     game.ticker = {
-      message: 'Destroy theirs VV',
-      top: window.innerHeight - 25 - 100,
+      message: 'Destroy -->',
+      top: window.innerHeight - window.innerHeight / game.viewHeight * 8,
       time: 4000,
       max: 4000,
     };

@@ -2750,7 +2750,7 @@ var doTick = function doTick(game) {
     game.score = 10;
   }
 
-  if (game.totalGameTime > 1000 && !game.dragTicker) {
+  if (game.totalGameTime > 4000 && !game.dragTicker) {
     game.dragTicker = true;
     game.ticker = {
       message: 'Drag to create pheromone trails',
@@ -2758,12 +2758,21 @@ var doTick = function doTick(game) {
       max: 3000
     };
   }
-  if (game.totalGameTime > 4000 && !game.goalTicker) {
+  if (game.totalGameTime > 15000 && !game.defendTicker) {
+    game.defendTicker = true;
+    game.ticker = {
+      message: '^^ Defend your ant hill',
+      time: 4000,
+      max: 4000
+    };
+  }
+  if (game.totalGameTime > 20000 && !game.goalTicker) {
     game.goalTicker = true;
     game.ticker = {
-      message: '^^ Defend ~~~~~~~~~ Attack VV',
-      time: 3000,
-      max: 3000
+      message: 'Destroy -->',
+      top: window.innerHeight - window.innerHeight / game.viewHeight * 8,
+      time: 4000,
+      max: 4000
     };
   }
 
@@ -10545,7 +10554,7 @@ function Ticker(props) {
     {
       style: {
         position: 'absolute',
-        top: 100,
+        top: ticker.top ? ticker.top : 100,
         left: 0,
         width: '100%',
         // opacity: shouldUseIndex ? index : 1,

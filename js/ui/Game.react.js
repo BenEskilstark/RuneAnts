@@ -266,7 +266,7 @@ function Ticker(props) {
     <h2
       style={{
         position: 'absolute',
-        top: 100,
+        top: ticker.top ? ticker.top : 100,
         left: 0,
         width: '100%',
         // opacity: shouldUseIndex ? index : 1,
