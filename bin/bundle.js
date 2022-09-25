@@ -2750,10 +2750,18 @@ var doTick = function doTick(game) {
     game.score = 10;
   }
 
-  if (game.totalGameTime > 4000 && !game.dragTicker) {
+  if (game.totalGameTime > 1000 && !game.dragTicker) {
     game.dragTicker = true;
     game.ticker = {
       message: 'Drag to create pheromone trails',
+      time: 3000,
+      max: 3000
+    };
+  }
+  if (game.totalGameTime > 4000 && !game.goalTicker) {
+    game.goalTicker = true;
+    game.ticker = {
+      message: '^^ Defend ~~~~~~~~~ Attack VV',
       time: 3000,
       max: 3000
     };
